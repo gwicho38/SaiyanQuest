@@ -1,0 +1,94 @@
+### Instructions for ML Agent: Recreating Dragon Ball Z: The Legacy of Goku (GBA) in Highest Fidelity
+
+As an ML agent tasked with recreating *Dragon Ball Z: The Legacy of Goku* for the Game Boy Advance (GBA) with the highest possible fidelity, your objective is to produce a functional game that mirrors the original in every aspect: storyline, gameplay mechanics, graphics, sound, level design, characters, enemies, items, quests, and technical constraints. This recreation should emulate the original's action-adventure RPG style, including its top-down perspective, real-time combat, exploration, and progression system. Use machine learning techniques where applicable, such as generative models (e.g., GANs for sprite upscaling or creation), procedural generation for maps, or AI-driven animation smoothing, but ensure all outputs align precisely with the original's assets and behaviors to avoid deviations.
+
+Prioritize fidelity by cross-referencing original ROM dumps, gameplay footage, and documented resources (e.g., sprites from The Spriters Resource, soundtracks from gamerips). The game must run within GBA hardware limits: 32KB WRAM, 256KB EWRAM, 16-color palettes per sprite layer, 240x160 resolution, and MIDI-like sound capabilities. If emulating or porting, target GBA-compatible engines like Butano or custom ML-optimized frameworks.
+
+Structure your recreation process in phases: analysis (study original), asset generation (ML-assisted), implementation (code mechanics), integration (assemble), and testing (ensure identical behavior). Below are comprehensive instructions covering all elements.
+
+#### 1. **Storyline and Narrative Structure**
+   - **Overview**: The game adapts the Saiyan Saga and Namek Saga from *Dragon Ball Z* (episodes ~1-107), focusing on Goku's journey. It compresses the anime into ~3-5 hours of gameplay, with linear progression gated by quests and bosses. Include full-motion video (FMV) cutscenes for key moments (e.g., Goku's death, Super Saiyan transformation), using compressed video at GBA specs (e.g., 8-bit color, low frame rate).
+   - **Key Plot Points and Progression**:
+     - **Start (Saiyan Saga)**: Goku visits Kame House. Retrieve 3 Dirty Magazines for Roshi. Raditz arrives, kidnaps Gohan. Goku helps an old man (build bridge with stones), meets Chiaotzu/Tien (retrieve pterodactyl egg), solves village issues (find Sue, get flowers/boat/cat Neko, learn Solar Flare). Fight Raditz; die with Piccolo's Special Beam Cannon.
+     - **Other World**: Meet King Yemma, traverse Snake Way. Encounter Princess Snake (fight), complete Hell tasks (collect spirits, catch Mez with Yemma's apple). Train with King Kai (catch Bubbles, hit Gregory).
+     - **Earth Return**: Navigate The Lookout, snowy areas, Pepper Town (save boy from wolves, stop bank robbery). Fight Nappa/Vegeta (including Great Ape form, cut by Yajirobe).
+     - **Namek Saga**: Travel to Namek, plant saplings, retrieve 3 artifacts for temple. Fight Ginyu Force (Recoom, Burter, Jeice, Captain Ginyu). Heal in Frieza's spaceship. Battle Frieza in 4 forms; transform into Super Saiyan after Krillin's death. End with escape in Ginyu pod.
+     - **Narrative Delivery**: Use dialogue boxes with character portraits (e.g., Goku's smiling face). Include ~20 side quests for EXP and gating. No branching paths; linear with backtracking for grinding.
+     - **ML Guidance**: Use NLP models (e.g., GPT variants) to generate dialogue scripts identical to the original Funimation dub phrasing. For FMV, train a video compression AI on original clips to recreate low-res versions.
+
+#### 2. **Gameplay Mechanics**
+   - **Core Loop**: Top-down exploration with real-time combat. Gain EXP from enemies/quests to level up (increases HP, strength, speed, energy). Max level ~50. Combat is unbalanced early (wolves/dinosaurs lethal), improves with Solar Flare.
+   - **Combat System**:
+     - Melee: A button for punches (main attack; small hitbox, high damage). Enemies clip into Goku, making positioning key.
+     - Energy Attacks: B button for ki blasts (low damage, small hitbox, drain energy meter). Cycle with L: Basic Ki Blast, Kamehameha (charged, but weak), Solar Flare (stuns enemies, essential for survival).
+     - Energy Meter: Drains on use, recharges idle. No blocking; dodge via movement.
+     - Transformations: Only Super Saiyan in final Frieza fight (boosts stats, golden hair sprite).
+     - Difficulty: High early (die to wolves), eases with levels/Solar Flare. Bosses have patterns (e.g., Vegeta Great Ape crushes, Frieza forms escalate attacks).
+   - **Exploration and Movement**:
+     - Top-down 2D world; walk/fly (collect feather orbs for flight meter; drains energy).
+     - Interact with NPCs/objects via A button. Destroy boulders for items (health/energy balls).
+     - Save at glowing points; death respawns at last save with EXP loss.
+   - **Progression**: Leveling auto-increases stats (HP, strength, speed, energy). No manual allocation. Capsules (scattered) heal/restore.
+   - **Quests**: ~20 side quests (e.g., fetch items, escort NPCs). Mandatory for progression (e.g., village elder gates north until quests done).
+   - **ML Guidance**: Train reinforcement learning agents to simulate enemy AI (e.g., wolves chase/aggress, bosses pattern-based). Use procedural ML for enemy spawn placement to match original randomness.
+
+#### 3. **Controls**
+   - Map to GBA buttons for authenticity:
+     - D-Pad: Movement (8-directional, slow walk; no run).
+     - A: Melee punch.
+     - B: Energy attack (hold for charge on Kamehameha).
+     - L: Cycle energy attacks.
+     - R: Unused (original has no block).
+     - Start: Pause/menu (quests, inventory, map).
+     - Select: Toggle flight (if meter full).
+   - Menu Navigation: Simple text-based; quests log, inventory (items auto-use on quests).
+   - ML Guidance: If simulating input, use ML to optimize controller mapping for modern ports while preserving original feel.
+
+#### 4. **Graphics and Assets**
+   - **Style**: 2D pixel art, top-down view. 16-color palettes, chibi-style sprites (Goku squat/short). Bright, colorful environments (greens for Earth, blues/purples for Namek). Detailed for GBA (e.g., animated water, destructible boulders).
+   - **Sprites and Animations**:
+     - Goku: Walking (4 directions), punching (arm extend), flying (aura), Super Saiyan (gold hair/flash). Portraits: Smiling, serious.
+     - Enemies: Wolves (chase/bite), Pterodactyls (fly/swoop), Dinosaurs (charge), Robbers (shoot). Bosses: Raditz (energy blasts), Vegeta Great Ape (crush), Frieza forms (evolving sprites: base bulky, second sleek, third alien, fourth smooth/white).
+     - NPCs: Bulma (blue hair), Krillin (bald), etc., with idle animations.
+     - Effects: Ki blasts (blue orbs), explosions (pixel bursts), Solar Flare (screen flash/stun).
+   - **UI/HUD**: Top bar for HP/energy meters, EXP bar. Inventory simple list.
+   - **FMV**: Low-res videos for intros (e.g., Raditz arrival), using GBA's early FMV tech (predates Game Boy Advance Video).
+   - **ML Guidance**: Use StyleGAN or PixelCNN to generate/upscale sprites from original rips (e.g., from spriters-resource.com). Ensure exact pixel matching. For animations, train LSTM on frame sequences for smooth interpolation.
+
+#### 5. **Sound and Music**
+   - **Soundtrack**: Original by Ariel Gross (not Faulconer like sequels). 18 tracks, chiptune/MIDI style. Key tracks: Upbeat exploration (Earth maps), tense boss (Frieza), mystical Other World. Gamerip available for reference.
+   - **Sound Effects**: Punch (thud), Ki blast (zap), explosion (boom), level up (chime), dialogue beep.
+   - **Unique**: No voice acting; text beeps. Music loops per area (e.g., adventurous for Snake Way).
+   - **ML Guidance**: Use audio ML models (e.g., WaveNet) to recreate MIDI tracks from originals. Generate variations for fidelity testing, but default to exact rips.
+
+#### 6. **Levels and Maps**
+   - **Design Philosophy**: Small, interconnected screens (GBA memory limits). Linear paths with light backtracking. Destructible elements (boulders), hidden items. Total ~15 areas, short game (~3 hours).
+   - **Key Maps**:
+     - Kame House/Goku's House: Small islands/woods; fetch quests.
+     - Spinach Wastes/Village: Forest with wolves/dinos; side quests (find items).
+     - Snake Way: Long path with pitfalls; fights.
+     - Hell/King Kai's Planet: Puzzle-like (collect spirits, catch Bubbles/Gregory).
+     - The Lookout/Snowy Area/Pepper Town: Urban/snow; robberies, rescues.
+     - Paprika Wasteland: Boss arena for Vegeta.
+     - Namek: Green alien landscapes; temple puzzles, Ginyu fights.
+     - Frieza's Spaceship/Outpost: Healing rooms, final battles.
+   - **ML Guidance**: Use procedural generation (e.g., GANs trained on original maps) to recreate layouts. Ensure pixel-perfect replication via image comparison.
+
+#### 7. **Characters and Enemies**
+   - **Playable**: Only Goku (no switches like sequels).
+   - **Supporting NPCs**: Bulma, Krillin, Roshi, Turtle, Gohan, Piccolo, Yamcha, Puar, King Yemma, Kami, Princess Snake, Goz/Mez, King Kai, Nappa, Vegeta, Namekians.
+   - **Enemies/Bosses**: As listed; AI simple (chase/attack). Bosses scripted (e.g., Frieza multi-phase).
+   - **ML Guidance**: Train CNNs for enemy pathfinding to match original behaviors.
+
+#### 8. **Items and Quests**
+   - **Items**: Quest-specific (e.g., Dirty Magazines, stones, egg, flowers, boat, Neko, spirits, saplings, artifacts, apple). Healing capsules (health/energy balls).
+   - **Quests**: Fetch/escort-based; reward EXP/abilities (e.g., Solar Flare).
+   - **ML Guidance**: Use graph ML to model quest dependencies.
+
+#### 9. **Technical and Unique Aspects**
+   - **GBA Constraints**: Optimize for 4MB ROM, no multiplayer. Include cheats (e.g., invincibility: Up, Down, Left, Right, B, A).
+   - **Bugs/Fidelity Notes**: Replicate issues like poor hitboxes, weak ki attacks for authenticity.
+   - **Testing**: Compare outputs frame-by-frame with original gameplay. Use emulators (mGBA) for validation.
+   - **ML Integration**: Leverage agents for automation (e.g., auto-generate code snippets in C++ for Butano engine).
+
+Execute in iterative cycles: Generate assets first, implement mechanics, integrate story, polish with ML optimizations. Aim for 100% fidelity—any deviation must be justified and minimal. If issues arise, reference original resources for corrections.
