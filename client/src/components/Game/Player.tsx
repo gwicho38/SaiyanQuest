@@ -124,35 +124,109 @@ export default function Player() {
 
   return (
     <group>
-      {/* Player mesh - Simple pixel-art Goku like reference image */}
+      {/* Player mesh - DBZ GBA style Goku sprite */}
       <group ref={meshRef} position={[position.x, position.y, position.z]}>
-        {/* Head (peach/tan) */}
+        {/* Head and face */}
         <mesh position={[0, 1.0, 0]}>
-          <boxGeometry args={[0.6, 0.6, 0.6]} />
+          <boxGeometry args={[0.7, 0.7, 0.5]} />
           <meshBasicMaterial 
             color="#fdbcb4" 
             transparent={isInvincible}
-            opacity={isInvincible ? 0.5 : 1.0}
+            opacity={isInvincible ? 0.4 : 1.0}
           />
         </mesh>
         
-        {/* Hair (black) */}
-        <mesh position={[0, 1.3, 0]}>
-          <boxGeometry args={[0.6, 0.3, 0.6]} />
+        {/* Hair (spiky black) */}
+        <mesh position={[0, 1.35, 0]}>
+          <boxGeometry args={[0.8, 0.4, 0.6]} />
           <meshBasicMaterial 
-            color="#000000" 
+            color={isAttacking ? "#ffff00" : "#2c1810"} 
             transparent={isInvincible}
-            opacity={isInvincible ? 0.5 : 1.0}
+            opacity={isInvincible ? 0.4 : 1.0}
           />
         </mesh>
         
-        {/* Body (orange gi) */}
-        <mesh position={[0, 0.3, 0]}>
-          <boxGeometry args={[0.8, 1.0, 0.6]} />
+        {/* Orange gi top */}
+        <mesh position={[0, 0.5, 0]}>
+          <boxGeometry args={[0.9, 0.8, 0.5]} />
           <meshBasicMaterial 
-            color={isAttacking ? "#ffaa00" : "#ff8c00"} 
+            color={isAttacking ? "#ff9500" : "#ff7f00"} 
             transparent={isInvincible}
-            opacity={isInvincible ? 0.5 : 1.0}
+            opacity={isInvincible ? 0.4 : 1.0}
+          />
+        </mesh>
+        
+        {/* Blue undershirt/belt area */}
+        <mesh position={[0, 0.1, 0]}>
+          <boxGeometry args={[0.9, 0.2, 0.5]} />
+          <meshBasicMaterial 
+            color="#1e3a8a" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.4 : 1.0}
+          />
+        </mesh>
+        
+        {/* Blue pants */}
+        <mesh position={[0, -0.3, 0]}>
+          <boxGeometry args={[0.8, 0.6, 0.5]} />
+          <meshBasicMaterial 
+            color="#1e3a8a" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.4 : 1.0}
+          />
+        </mesh>
+        
+        {/* Arms */}
+        <mesh position={[-0.6, 0.5, 0]}>
+          <boxGeometry args={[0.3, 0.6, 0.3]} />
+          <meshBasicMaterial 
+            color="#fdbcb4" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.4 : 1.0}
+          />
+        </mesh>
+        <mesh position={[0.6, 0.5, 0]}>
+          <boxGeometry args={[0.3, 0.6, 0.3]} />
+          <meshBasicMaterial 
+            color="#fdbcb4" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.4 : 1.0}
+          />
+        </mesh>
+        
+        {/* Legs */}
+        <mesh position={[-0.25, -0.75, 0]}>
+          <boxGeometry args={[0.3, 0.5, 0.3]} />
+          <meshBasicMaterial 
+            color="#fdbcb4" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.4 : 1.0}
+          />
+        </mesh>
+        <mesh position={[0.25, -0.75, 0]}>
+          <boxGeometry args={[0.3, 0.5, 0.3]} />
+          <meshBasicMaterial 
+            color="#fdbcb4" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.4 : 1.0}
+          />
+        </mesh>
+        
+        {/* Boots */}
+        <mesh position={[-0.25, -1.0, 0]}>
+          <boxGeometry args={[0.35, 0.2, 0.4]} />
+          <meshBasicMaterial 
+            color="#4a5568" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.4 : 1.0}
+          />
+        </mesh>
+        <mesh position={[0.25, -1.0, 0]}>
+          <boxGeometry args={[0.35, 0.2, 0.4]} />
+          <meshBasicMaterial 
+            color="#4a5568" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.4 : 1.0}
           />
         </mesh>
       </group>

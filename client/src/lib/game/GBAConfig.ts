@@ -40,11 +40,11 @@ export const GBA_CONFIG = {
     ENEMIES: {
       WOLF: {
         HEALTH: 40,
-        DAMAGE: 8, // Reduced from 10
-        MOVE_SPEED: 2.5, // Slower movement
+        DAMAGE: 8,
+        MOVE_SPEED: 2.0, // Even slower
         ATTACK_RANGE: 1.5,
-        DETECTION_RANGE: 6.0, // Shorter detection range
-        ATTACK_COOLDOWN: 1500, // Longer cooldown
+        DETECTION_RANGE: 5.0, // Even shorter detection
+        ATTACK_COOLDOWN: 2000, // Much longer cooldown 
       },
       
       DINOSAUR: {

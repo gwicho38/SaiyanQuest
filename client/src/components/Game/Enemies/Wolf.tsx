@@ -42,9 +42,12 @@ export default function Wolf({ position }: WolfProps) {
         const currentTime = state.clock.elapsedTime;
         const cooldownSeconds = attackCooldownVariation / 1000;
         if (currentTime - lastAttackTime > cooldownSeconds) {
-          playerStore.takeDamage(GBA_CONFIG.BALANCE.ENEMIES.WOLF.DAMAGE);
-          setLastAttackTime(currentTime);
-          console.log(`Wolf ${id.slice(0,4)} attacked player for ${GBA_CONFIG.BALANCE.ENEMIES.WOLF.DAMAGE} damage!`);
+          // Only attack if player is actually vulnerable (not during invincibility frames)
+          if (!playerStore.isInvincible) {
+            playerStore.takeDamage(GBA_CONFIG.BALANCE.ENEMIES.WOLF.DAMAGE);
+            setLastAttackTime(currentTime);
+            console.log(`Wolf ${id.slice(0,4)} attacked player for ${GBA_CONFIG.BALANCE.ENEMIES.WOLF.DAMAGE} damage!`);
+          }
         }
       }
     }
@@ -99,11 +102,61 @@ export default function Wolf({ position }: WolfProps) {
 
   return (
     <group>
-      {/* Wolf - simple pixel art style like reference image */}
+      {/* Wolf - DBZ GBA style enemy */}
       <group ref={meshRef} position={position}>
-        {/* Simple wolf body (dark gray/brown) */}
-        <mesh position={[0, 0.3, 0]}>
-          <boxGeometry args={[1.0, 0.6, 0.8]} />
+        {/* Wolf body */}
+        <mesh position={[0, 0.4, 0]}>
+          <boxGeometry args={[1.2, 0.7, 0.9]} />
+          <meshBasicMaterial color="#8B4513" />
+        </mesh>
+        
+        {/* Wolf head */}
+        <mesh position={[0, 0.5, -0.6]}>
+          <boxGeometry args={[0.8, 0.6, 0.7]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+        
+        {/* Eyes (glowing red) */}
+        <mesh position={[-0.2, 0.6, -0.9]}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshBasicMaterial color="#ff0000" />
+        </mesh>
+        <mesh position={[0.2, 0.6, -0.9]}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshBasicMaterial color="#ff0000" />
+        </mesh>
+        
+        {/* Ears */}
+        <mesh position={[-0.25, 0.8, -0.4]}>
+          <boxGeometry args={[0.2, 0.3, 0.1]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+        <mesh position={[0.25, 0.8, -0.4]}>
+          <boxGeometry args={[0.2, 0.3, 0.1]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+        
+        {/* Legs */}
+        <mesh position={[-0.35, -0.2, -0.2]}>
+          <boxGeometry args={[0.25, 0.6, 0.25]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+        <mesh position={[0.35, -0.2, -0.2]}>
+          <boxGeometry args={[0.25, 0.6, 0.25]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+        <mesh position={[-0.35, -0.2, 0.4]}>
+          <boxGeometry args={[0.25, 0.6, 0.25]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+        <mesh position={[0.35, -0.2, 0.4]}>
+          <boxGeometry args={[0.25, 0.6, 0.25]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+        
+        {/* Tail */}
+        <mesh position={[0, 0.6, 0.7]}>
+          <boxGeometry args={[0.15, 0.15, 0.5]} />
           <meshBasicMaterial color="#654321" />
         </mesh>
       </group>
