@@ -33,18 +33,18 @@ export const GBA_CONFIG = {
       KAMEHAMEHA_COOLDOWN: 1200,
       
       // Status effects
-      INVINCIBILITY_FRAMES: 500, // milliseconds after taking damage
+      INVINCIBILITY_FRAMES: 800, // milliseconds after taking damage (increased)
       ATTACK_STUN_TIME: 200,
     },
 
     ENEMIES: {
       WOLF: {
         HEALTH: 40,
-        DAMAGE: 10,
-        MOVE_SPEED: 3.0,
+        DAMAGE: 8, // Reduced from 10
+        MOVE_SPEED: 2.5, // Slower movement
         ATTACK_RANGE: 1.5,
-        DETECTION_RANGE: 8.0,
-        ATTACK_COOLDOWN: 1000,
+        DETECTION_RANGE: 6.0, // Shorter detection range
+        ATTACK_COOLDOWN: 1500, // Longer cooldown
       },
       
       DINOSAUR: {

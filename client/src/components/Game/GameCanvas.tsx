@@ -29,16 +29,20 @@ export default function GameCanvas() {
   const { position } = usePlayerStore();
   const [subscribe, getState] = useKeyboardControls<Controls>();
 
-  // Camera follows player
+  // Camera follows player - angled behind like original GBA game
   useFrame(() => {
     if (camera && position) {
-      // Smooth camera follow
+      // Camera positioned behind and above player at an angle
       const targetX = position.x;
-      const targetZ = position.z + 5; // Offset behind player for better view
+      const targetY = 6; // Height for angled view
+      const targetZ = position.z + 8; // Distance behind player
       
       camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, 0.1);
+      camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.1);
       camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.1);
-      camera.lookAt(position.x, 0, position.z);
+      
+      // Look slightly ahead of player instead of directly at them
+      camera.lookAt(position.x, 0, position.z - 2);
     }
   });
 
@@ -70,10 +74,8 @@ export default function GameCanvas() {
       {/* Combat System */}
       <CombatSystem />
       
-      {/* Enemies */}
+      {/* Enemies - single wolf for balanced gameplay */}
       <Wolf position={[5, 0, 0]} />
-      <Wolf position={[-3, 0, -2]} />
-      <Wolf position={[8, 0, -5]} />
     </>
   );
 }

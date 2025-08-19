@@ -11,7 +11,7 @@ interface WolfProps {
 }
 
 export default function Wolf({ position }: WolfProps) {
-  const meshRef = useRef<Mesh>(null);
+  const meshRef = useRef<THREE.Group>(null);
   const [health, setHealth] = useState(GBA_CONFIG.BALANCE.ENEMIES.WOLF.HEALTH);
   const [isAlive, setIsAlive] = useState(true);
   const [lastAttackTime, setLastAttackTime] = useState(Math.random() * -2); // Random initial delay
@@ -99,45 +99,11 @@ export default function Wolf({ position }: WolfProps) {
 
   return (
     <group>
-      {/* Wolf body - pixel art style */}
+      {/* Wolf - simple pixel art style like reference image */}
       <group ref={meshRef} position={position}>
-        {/* Main body (brown) */}
+        {/* Simple wolf body (dark gray/brown) */}
         <mesh position={[0, 0.3, 0]}>
-          <boxGeometry args={[1.2, 0.6, 0.8]} />
-          <meshBasicMaterial color="#8B4513" />
-        </mesh>
-        
-        {/* Wolf head */}
-        <mesh position={[0, 0.4, -0.7]}>
-          <boxGeometry args={[0.7, 0.5, 0.6]} />
-          <meshBasicMaterial color="#654321" />
-        </mesh>
-        
-        {/* Eyes (red for aggression) */}
-        <mesh position={[-0.15, 0.5, -0.9]}>
-          <boxGeometry args={[0.1, 0.1, 0.1]} />
-          <meshBasicMaterial color="#ff0000" />
-        </mesh>
-        <mesh position={[0.15, 0.5, -0.9]}>
-          <boxGeometry args={[0.1, 0.1, 0.1]} />
-          <meshBasicMaterial color="#ff0000" />
-        </mesh>
-        
-        {/* Legs */}
-        <mesh position={[-0.3, -0.2, -0.2]}>
-          <boxGeometry args={[0.2, 0.4, 0.2]} />
-          <meshBasicMaterial color="#654321" />
-        </mesh>
-        <mesh position={[0.3, -0.2, -0.2]}>
-          <boxGeometry args={[0.2, 0.4, 0.2]} />
-          <meshBasicMaterial color="#654321" />
-        </mesh>
-        <mesh position={[-0.3, -0.2, 0.3]}>
-          <boxGeometry args={[0.2, 0.4, 0.2]} />
-          <meshBasicMaterial color="#654321" />
-        </mesh>
-        <mesh position={[0.3, -0.2, 0.3]}>
-          <boxGeometry args={[0.2, 0.4, 0.2]} />
+          <boxGeometry args={[1.0, 0.6, 0.8]} />
           <meshBasicMaterial color="#654321" />
         </mesh>
       </group>
