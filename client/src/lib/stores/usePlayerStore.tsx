@@ -78,9 +78,18 @@ export const usePlayerStore = create<PlayerState>()(
     
     takeDamage: (amount) => set((state) => {
       const currentTime = Date.now();
+      const timeSinceLastDamage = currentTime - state.lastDamageTime;
+      
+      console.log(`Damage attempt: ${amount}, isInvincible: ${state.isInvincible}, timeSinceLastDamage: ${timeSinceLastDamage}ms`);
       
       // Check invincibility frames using GBA config
-      if (state.isInvincible || currentTime - state.lastDamageTime < GBA_CONFIG.BALANCE.PLAYER.INVINCIBILITY_FRAMES) {
+      if (state.isInvincible) {
+        console.log(`Damage blocked by invincibility flag!`);
+        return {}; // No damage taken
+      }
+      
+      if (state.lastDamageTime > 0 && timeSinceLastDamage < GBA_CONFIG.BALANCE.PLAYER.INVINCIBILITY_FRAMES) {
+        console.log(`Damage blocked by invincibility timer! ${timeSinceLastDamage}ms < ${GBA_CONFIG.BALANCE.PLAYER.INVINCIBILITY_FRAMES}ms`);
         return {}; // No damage taken
       }
       
@@ -97,14 +106,17 @@ export const usePlayerStore = create<PlayerState>()(
       // Remove invincibility after frames using GBA config
       setTimeout(() => {
         set({ isInvincible: false });
+        console.log('Invincibility frames ended');
       }, GBA_CONFIG.BALANCE.PLAYER.INVINCIBILITY_FRAMES);
       
       // Game over when health reaches 0
       if (newHealth <= 0) {
         console.log("GAME OVER - Player died!");
         setTimeout(() => {
-          const gameStore = require('./useGameStore').useGameStore.getState();
-          gameStore.setGamePhase('gameOver');
+          // Import gameStore dynamically to avoid require() error
+          import('./useGameStore').then(({ useGameStore }) => {
+            useGameStore.getState().setGamePhase('gameOver');
+          });
         }, 100);
       }
       

@@ -14,9 +14,10 @@ export default function Wolf({ position }: WolfProps) {
   const meshRef = useRef<Mesh>(null);
   const [health, setHealth] = useState(GBA_CONFIG.BALANCE.ENEMIES.WOLF.HEALTH);
   const [isAlive, setIsAlive] = useState(true);
-  const [lastAttackTime, setLastAttackTime] = useState(0);
+  const [lastAttackTime, setLastAttackTime] = useState(Math.random() * -2); // Random initial delay
   const [targetPosition, setTargetPosition] = useState(new Vector3(...position));
   const [id] = useState(nanoid());
+  const [attackCooldownVariation] = useState(Math.random() * 500 + 750); // 750-1250ms cooldown
   
   const playerStore = usePlayerStore();
   const { meleeAttacks, kiBlasts } = useCombatStore();
@@ -39,11 +40,11 @@ export default function Wolf({ position }: WolfProps) {
       // Attack if close enough and player is alive
       if (distanceToPlayer <= GBA_CONFIG.BALANCE.ENEMIES.WOLF.ATTACK_RANGE && playerStore.health > 0) {
         const currentTime = state.clock.elapsedTime;
-        const cooldownSeconds = GBA_CONFIG.BALANCE.ENEMIES.WOLF.ATTACK_COOLDOWN / 1000;
+        const cooldownSeconds = attackCooldownVariation / 1000;
         if (currentTime - lastAttackTime > cooldownSeconds) {
           playerStore.takeDamage(GBA_CONFIG.BALANCE.ENEMIES.WOLF.DAMAGE);
           setLastAttackTime(currentTime);
-          console.log(`Wolf attacked player for ${GBA_CONFIG.BALANCE.ENEMIES.WOLF.DAMAGE} damage!`);
+          console.log(`Wolf ${id.slice(0,4)} attacked player for ${GBA_CONFIG.BALANCE.ENEMIES.WOLF.DAMAGE} damage!`);
         }
       }
     }
@@ -98,17 +99,48 @@ export default function Wolf({ position }: WolfProps) {
 
   return (
     <group>
-      {/* Wolf body */}
-      <mesh ref={meshRef} position={position}>
-        <boxGeometry args={[1, 0.8, 1.5]} />
-        <meshStandardMaterial color="#8B4513" />
-      </mesh>
-      
-      {/* Wolf head */}
-      <mesh position={[position[0], position[1] + 0.3, position[2] - 0.6]}>
-        <boxGeometry args={[0.6, 0.6, 0.8]} />
-        <meshStandardMaterial color="#654321" />
-      </mesh>
+      {/* Wolf body - pixel art style */}
+      <group ref={meshRef} position={position}>
+        {/* Main body (brown) */}
+        <mesh position={[0, 0.3, 0]}>
+          <boxGeometry args={[1.2, 0.6, 0.8]} />
+          <meshBasicMaterial color="#8B4513" />
+        </mesh>
+        
+        {/* Wolf head */}
+        <mesh position={[0, 0.4, -0.7]}>
+          <boxGeometry args={[0.7, 0.5, 0.6]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+        
+        {/* Eyes (red for aggression) */}
+        <mesh position={[-0.15, 0.5, -0.9]}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshBasicMaterial color="#ff0000" />
+        </mesh>
+        <mesh position={[0.15, 0.5, -0.9]}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshBasicMaterial color="#ff0000" />
+        </mesh>
+        
+        {/* Legs */}
+        <mesh position={[-0.3, -0.2, -0.2]}>
+          <boxGeometry args={[0.2, 0.4, 0.2]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+        <mesh position={[0.3, -0.2, -0.2]}>
+          <boxGeometry args={[0.2, 0.4, 0.2]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+        <mesh position={[-0.3, -0.2, 0.3]}>
+          <boxGeometry args={[0.2, 0.4, 0.2]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+        <mesh position={[0.3, -0.2, 0.3]}>
+          <boxGeometry args={[0.2, 0.4, 0.2]} />
+          <meshBasicMaterial color="#654321" />
+        </mesh>
+      </group>
       
       {/* Health bar above wolf */}
       <mesh position={[position[0], position[1] + 1.5, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>

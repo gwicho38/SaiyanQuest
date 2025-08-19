@@ -20,7 +20,7 @@ enum Controls {
 }
 
 export default function Player() {
-  const meshRef = useRef<Mesh>(null);
+  const meshRef = useRef<THREE.Group>(null);
   const [subscribe, getState] = useKeyboardControls<Controls>();
   
   const { 
@@ -124,17 +124,74 @@ export default function Player() {
 
   return (
     <group>
-      {/* Player mesh - representing Goku with GBA-style colors and invincibility effect */}
-      <mesh ref={meshRef} position={[position.x, position.y, position.z]}>
-        <boxGeometry args={[1, 1.5, 0.5]} />
-        <meshStandardMaterial 
-          color={isAttacking ? "#ffff00" : "#ff8c00"} // Golden when attacking, orange gi normally
-          transparent={isInvincible}
-          opacity={isInvincible ? 0.5 : 1.0} // Flash effect when invincible
-          emissive={isInvincible ? "#ffffff" : "#000000"}
-          emissiveIntensity={isInvincible ? 0.2 : 0}
-        />
-      </mesh>
+      {/* Player mesh - Goku with pixel-art style */}
+      <group ref={meshRef} position={[position.x, position.y, position.z]}>
+        {/* Body (orange gi) */}
+        <mesh position={[0, 0.5, 0]}>
+          <boxGeometry args={[0.8, 1.0, 0.4]} />
+          <meshBasicMaterial 
+            color={isAttacking ? "#ffaa00" : "#ff8c00"} 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.5 : 1.0}
+          />
+        </mesh>
+        
+        {/* Head */}
+        <mesh position={[0, 1.2, 0]}>
+          <boxGeometry args={[0.6, 0.6, 0.4]} />
+          <meshBasicMaterial 
+            color="#fdbcb4" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.5 : 1.0}
+          />
+        </mesh>
+        
+        {/* Hair (spiky black) */}
+        <mesh position={[0, 1.5, 0]}>
+          <boxGeometry args={[0.8, 0.4, 0.6]} />
+          <meshBasicMaterial 
+            color={isAttacking ? "#ffff00" : "#000000"} 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.5 : 1.0}
+          />
+        </mesh>
+        
+        {/* Arms */}
+        <mesh position={[-0.5, 0.7, 0]}>
+          <boxGeometry args={[0.3, 0.8, 0.3]} />
+          <meshBasicMaterial 
+            color="#fdbcb4" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.5 : 1.0}
+          />
+        </mesh>
+        <mesh position={[0.5, 0.7, 0]}>
+          <boxGeometry args={[0.3, 0.8, 0.3]} />
+          <meshBasicMaterial 
+            color="#fdbcb4" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.5 : 1.0}
+          />
+        </mesh>
+        
+        {/* Legs */}
+        <mesh position={[-0.2, 0, 0]}>
+          <boxGeometry args={[0.3, 0.8, 0.3]} />
+          <meshBasicMaterial 
+            color="#000080" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.5 : 1.0}
+          />
+        </mesh>
+        <mesh position={[0.2, 0, 0]}>
+          <boxGeometry args={[0.3, 0.8, 0.3]} />
+          <meshBasicMaterial 
+            color="#000080" 
+            transparent={isInvincible}
+            opacity={isInvincible ? 0.5 : 1.0}
+          />
+        </mesh>
+      </group>
       
       {/* Player shadow */}
       <mesh position={[position.x, -0.01, position.z]} rotation={[-Math.PI / 2, 0, 0]}>
