@@ -124,11 +124,13 @@ export default function Player() {
 
   return (
     <group>
-      {/* Player mesh - DBZ GBA style Goku sprite */}
+      {/* Player mesh - Clean pixel art style like reference image */}
       <group ref={meshRef} position={[position.x, position.y, position.z]}>
-        {/* Head and face */}
-        <mesh position={[0, 1.0, 0]}>
-          <boxGeometry args={[0.7, 0.7, 0.5]} />
+        {/* Simple character body - clean pixel art style */}
+        
+        {/* Head */}
+        <mesh position={[0, 0.8, 0]}>
+          <boxGeometry args={[0.5, 0.5, 0.5]} />
           <meshBasicMaterial 
             color="#fdbcb4" 
             transparent={isInvincible}
@@ -136,95 +138,21 @@ export default function Player() {
           />
         </mesh>
         
-        {/* Hair (spiky black) */}
-        <mesh position={[0, 1.35, 0]}>
-          <boxGeometry args={[0.8, 0.4, 0.6]} />
+        {/* Hair */}
+        <mesh position={[0, 1.0, 0]}>
+          <boxGeometry args={[0.5, 0.2, 0.5]} />
           <meshBasicMaterial 
-            color={isAttacking ? "#ffff00" : "#2c1810"} 
+            color="#000000" 
             transparent={isInvincible}
             opacity={isInvincible ? 0.4 : 1.0}
           />
         </mesh>
         
-        {/* Orange gi top */}
-        <mesh position={[0, 0.5, 0]}>
-          <boxGeometry args={[0.9, 0.8, 0.5]} />
+        {/* Body (orange gi) */}
+        <mesh position={[0, 0.2, 0]}>
+          <boxGeometry args={[0.6, 0.8, 0.4]} />
           <meshBasicMaterial 
             color={isAttacking ? "#ff9500" : "#ff7f00"} 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Blue undershirt/belt area */}
-        <mesh position={[0, 0.1, 0]}>
-          <boxGeometry args={[0.9, 0.2, 0.5]} />
-          <meshBasicMaterial 
-            color="#1e3a8a" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Blue pants */}
-        <mesh position={[0, -0.3, 0]}>
-          <boxGeometry args={[0.8, 0.6, 0.5]} />
-          <meshBasicMaterial 
-            color="#1e3a8a" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Arms */}
-        <mesh position={[-0.6, 0.5, 0]}>
-          <boxGeometry args={[0.3, 0.6, 0.3]} />
-          <meshBasicMaterial 
-            color="#fdbcb4" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        <mesh position={[0.6, 0.5, 0]}>
-          <boxGeometry args={[0.3, 0.6, 0.3]} />
-          <meshBasicMaterial 
-            color="#fdbcb4" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Legs */}
-        <mesh position={[-0.25, -0.75, 0]}>
-          <boxGeometry args={[0.3, 0.5, 0.3]} />
-          <meshBasicMaterial 
-            color="#fdbcb4" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        <mesh position={[0.25, -0.75, 0]}>
-          <boxGeometry args={[0.3, 0.5, 0.3]} />
-          <meshBasicMaterial 
-            color="#fdbcb4" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Boots */}
-        <mesh position={[-0.25, -1.0, 0]}>
-          <boxGeometry args={[0.35, 0.2, 0.4]} />
-          <meshBasicMaterial 
-            color="#4a5568" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        <mesh position={[0.25, -1.0, 0]}>
-          <boxGeometry args={[0.35, 0.2, 0.4]} />
-          <meshBasicMaterial 
-            color="#4a5568" 
             transparent={isInvincible}
             opacity={isInvincible ? 0.4 : 1.0}
           />
