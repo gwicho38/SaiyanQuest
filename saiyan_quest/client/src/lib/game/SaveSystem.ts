@@ -37,9 +37,27 @@ export class SaveSystem {
     this.startAutoSave();
   }
 
-  save(slotName: string = 'autosave'): boolean {
+  private async syncWithCloud(slotName: string, saveData: SaveData): Promise<boolean> {
     try {
-      // This would integrate with the actual stores to get current game state
+      const response = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 'current_user_id', // TODO: Replace with actual user ID
+          slotName,
+          saveData
+        })
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Cloud sync failed:', error);
+      return false;
+    }
+  }
+
+  async save(slotName: string = 'autosave'): Promise<boolean> {
+    try {
+      // Get current state from stores
       const saveData: SaveData = {
         playerData: {
           position: { x: 0, y: 0, z: 0 }, // Get from player store
@@ -64,15 +82,29 @@ export class SaveSystem {
       this.saveSlots.set(slotName, saveData);
       this.saveToLocalStorage();
       
-      console.log(`Game saved to slot: ${slotName}`);
-      return true;
+      // Sync with cloud
+      const cloudSuccess = await this.syncWithCloud(slotName, saveData);
+      console.log(`Game saved ${cloudSuccess ? 'with cloud sync' : 'locally only'} to slot: ${slotName}`);
+      return cloudSuccess;
     } catch (error) {
       console.error('Failed to save game:', error);
       return false;
     }
   }
 
-  load(slotName: string = 'autosave'): boolean {
+  async load(slotName: string = 'autosave'): Promise<boolean> {
+    // Try cloud first
+    try {
+      const response = await fetch(`/api/save/current_user_id/${slotName}`);
+      if (response.ok) {
+        const { data } = await response.json();
+        this.saveSlots.set(slotName, data);
+        this.saveToLocalStorage();
+      }
+    } catch (error) {
+      console.log('Using local save data due to cloud error:', error);
+    }
+
     const saveData = this.saveSlots.get(slotName);
     if (!saveData) {
       console.log(`No save data found for slot: ${slotName}`);
