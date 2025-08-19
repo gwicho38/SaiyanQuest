@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useKeyboardControls } from '@react-three/drei';
 import { Mesh } from 'three';
@@ -7,6 +7,75 @@ import { useCombatStore } from '../../lib/stores/useCombatStore';
 import { useAudio } from '../../lib/stores/useAudio';
 import { GBA_CONFIG } from '../../lib/game/GBAConfig';
 import * as THREE from 'three';
+
+// Create a 2D Goku sprite texture (authentic DBZ GBA style)
+function createGokuSprite(isAttacking: boolean, isInvincible: boolean): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = 32;
+  canvas.height = 48;
+  const ctx = canvas.getContext('2d')!;
+  
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Colors from authentic DBZ GBA sprites
+  const skinColor = '#fdbcb4';
+  const hairColor = isAttacking ? '#ffff00' : '#1a1a1a'; // Super Saiyan effect
+  const giColor = '#ff8c00';
+  const blueColor = '#1e3a8a';
+  
+  // Draw Goku sprite pixel art style
+  ctx.fillStyle = skinColor;
+  
+  // Head
+  ctx.fillRect(12, 8, 8, 8);
+  
+  // Hair (spiky)
+  ctx.fillStyle = hairColor;
+  ctx.fillRect(10, 4, 12, 6);
+  ctx.fillRect(8, 6, 2, 4);  // Left spike
+  ctx.fillRect(22, 6, 2, 4); // Right spike
+  ctx.fillRect(14, 2, 4, 4); // Top spike
+  
+  // Body - Orange gi
+  ctx.fillStyle = giColor;
+  ctx.fillRect(10, 16, 12, 12);
+  
+  // Blue undershirt/belt
+  ctx.fillStyle = blueColor;
+  ctx.fillRect(10, 24, 12, 4);
+  
+  // Blue pants
+  ctx.fillStyle = blueColor;
+  ctx.fillRect(11, 28, 10, 12);
+  
+  // Arms (skin)
+  ctx.fillStyle = skinColor;
+  ctx.fillRect(6, 18, 4, 8);   // Left arm
+  ctx.fillRect(22, 18, 4, 8);  // Right arm
+  
+  // Wristbands (blue)
+  ctx.fillStyle = blueColor;
+  ctx.fillRect(6, 24, 4, 2);   // Left wristband
+  ctx.fillRect(22, 24, 4, 2);  // Right wristband
+  
+  // Legs (skin)
+  ctx.fillStyle = skinColor;
+  ctx.fillRect(12, 40, 3, 6);  // Left leg
+  ctx.fillRect(17, 40, 3, 6);  // Right leg
+  
+  // Boots (blue)
+  ctx.fillStyle = blueColor;
+  ctx.fillRect(11, 44, 5, 4);  // Left boot
+  ctx.fillRect(16, 44, 5, 4);  // Right boot
+  
+  // Eyes (black dots)
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(13, 10, 1, 1);  // Left eye
+  ctx.fillRect(18, 10, 1, 1);  // Right eye
+  
+  return canvas;
+}
 
 enum Controls {
   up = 'up',
@@ -43,6 +112,15 @@ export default function Player() {
   
   const [lastMoveTime, setLastMoveTime] = useState(0);
   const [isAttacking, setIsAttacking] = useState(false);
+  
+  // Create sprite texture (memoized to prevent recreation every render)
+  const spriteTexture = useMemo(() => {
+    const canvas = createGokuSprite(isAttacking, isInvincible);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.flipY = false;
+    texture.needsUpdate = true;
+    return texture;
+  }, [isAttacking, isInvincible]);
 
   // Handle movement and combat
   useFrame((state, delta) => {
@@ -124,130 +202,15 @@ export default function Player() {
 
   return (
     <group>
-      {/* Player mesh - Authentic DBZ GBA Goku sprite */}
-      <group ref={meshRef} position={[position.x, position.y, position.z]}>
-        {/* Head (peach skin tone) */}
-        <mesh position={[0, 0.9, 0]}>
-          <boxGeometry args={[0.6, 0.6, 0.5]} />
-          <meshBasicMaterial 
-            color="#fdbcb4" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Spiky black hair */}
-        <mesh position={[0, 1.25, 0]}>
-          <boxGeometry args={[0.7, 0.4, 0.6]} />
-          <meshBasicMaterial 
-            color={isAttacking ? "#ffff00" : "#1a1a1a"} 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Orange gi top */}
-        <mesh position={[0, 0.4, 0]}>
-          <boxGeometry args={[0.8, 0.7, 0.5]} />
-          <meshBasicMaterial 
-            color={isAttacking ? "#ff9a00" : "#ff8c00"} 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Dark blue undershirt/belt */}
-        <mesh position={[0, 0.05, 0]}>
-          <boxGeometry args={[0.8, 0.15, 0.5]} />
-          <meshBasicMaterial 
-            color="#1e3a8a" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Blue pants/bottom */}
-        <mesh position={[0, -0.35, 0]}>
-          <boxGeometry args={[0.7, 0.6, 0.5]} />
-          <meshBasicMaterial 
-            color="#1e3a8a" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Arms with dark blue wristbands */}
-        <mesh position={[-0.55, 0.4, 0]}>
-          <boxGeometry args={[0.25, 0.6, 0.25]} />
-          <meshBasicMaterial 
-            color="#fdbcb4" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        <mesh position={[0.55, 0.4, 0]}>
-          <boxGeometry args={[0.25, 0.6, 0.25]} />
-          <meshBasicMaterial 
-            color="#fdbcb4" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Wristbands */}
-        <mesh position={[-0.55, 0.1, 0]}>
-          <boxGeometry args={[0.3, 0.15, 0.3]} />
-          <meshBasicMaterial 
-            color="#1e3a8a" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        <mesh position={[0.55, 0.1, 0]}>
-          <boxGeometry args={[0.3, 0.15, 0.3]} />
-          <meshBasicMaterial 
-            color="#1e3a8a" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Legs */}
-        <mesh position={[-0.2, -0.8, 0]}>
-          <boxGeometry args={[0.25, 0.5, 0.25]} />
-          <meshBasicMaterial 
-            color="#fdbcb4" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        <mesh position={[0.2, -0.8, 0]}>
-          <boxGeometry args={[0.25, 0.5, 0.25]} />
-          <meshBasicMaterial 
-            color="#fdbcb4" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        
-        {/* Dark blue boots */}
-        <mesh position={[-0.2, -1.1, 0]}>
-          <boxGeometry args={[0.3, 0.25, 0.4]} />
-          <meshBasicMaterial 
-            color="#1e3a8a" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-        <mesh position={[0.2, -1.1, 0]}>
-          <boxGeometry args={[0.3, 0.25, 0.4]} />
-          <meshBasicMaterial 
-            color="#1e3a8a" 
-            transparent={isInvincible}
-            opacity={isInvincible ? 0.4 : 1.0}
-          />
-        </mesh>
-      </group>
+      {/* Player sprite - 2D DBZ GBA style (not 3D boxes!) */}
+      <mesh ref={meshRef} position={[position.x, position.y, position.z]} rotation={[0, 0, 0]}>
+        <planeGeometry args={[1.5, 2]} />
+        <meshBasicMaterial 
+          transparent={true}
+          opacity={isInvincible ? 0.4 : 1.0}
+          map={spriteTexture}
+        />
+      </mesh>
       
       {/* Player shadow */}
       <mesh position={[position.x, -0.01, position.z]} rotation={[-Math.PI / 2, 0, 0]}>
