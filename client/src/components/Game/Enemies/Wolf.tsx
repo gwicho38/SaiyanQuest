@@ -99,12 +99,28 @@ export default function Wolf({ position }: WolfProps) {
 
   return (
     <group>
-      {/* Wolf - Simple clean pixel art style */}
+      {/* Wolf - DBZ GBA style enemy (simple but recognizable) */}
       <group ref={meshRef} position={position}>
-        {/* Simple wolf body */}
-        <mesh position={[0, 0.3, 0]}>
-          <boxGeometry args={[0.8, 0.5, 0.6]} />
+        {/* Wolf body */}
+        <mesh position={[0, 0.4, 0]}>
+          <boxGeometry args={[1.0, 0.6, 0.8]} />
+          <meshBasicMaterial color="#8B4513" />
+        </mesh>
+        
+        {/* Wolf head */}
+        <mesh position={[0, 0.5, -0.5]}>
+          <boxGeometry args={[0.7, 0.5, 0.6]} />
           <meshBasicMaterial color="#654321" />
+        </mesh>
+        
+        {/* Simple red eyes */}
+        <mesh position={[-0.15, 0.6, -0.8]}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshBasicMaterial color="#ff0000" />
+        </mesh>
+        <mesh position={[0.15, 0.6, -0.8]}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshBasicMaterial color="#ff0000" />
         </mesh>
       </group>
       
