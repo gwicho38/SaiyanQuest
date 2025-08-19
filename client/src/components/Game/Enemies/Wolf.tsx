@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh, Vector3 } from 'three';
+import * as THREE from 'three';
 import { usePlayerStore } from '../../../lib/stores/usePlayerStore';
 import { useCombatStore } from '../../../lib/stores/useCombatStore';
 import { GBA_CONFIG } from '../../../lib/game/GBAConfig';
@@ -14,10 +15,9 @@ export default function Wolf({ position }: WolfProps) {
   const meshRef = useRef<THREE.Group>(null);
   const [health, setHealth] = useState(GBA_CONFIG.BALANCE.ENEMIES.WOLF.HEALTH);
   const [isAlive, setIsAlive] = useState(true);
-  const [lastAttackTime, setLastAttackTime] = useState(Math.random() * -2); // Random initial delay
+  const [lastAttackTime, setLastAttackTime] = useState(Math.random() * -3); // Random initial delay up to 3 seconds
   const [targetPosition, setTargetPosition] = useState(new Vector3(...position));
   const [id] = useState(nanoid());
-  const [attackCooldownVariation] = useState(Math.random() * 500 + 750); // 750-1250ms cooldown
   
   const playerStore = usePlayerStore();
   const { meleeAttacks, kiBlasts } = useCombatStore();
