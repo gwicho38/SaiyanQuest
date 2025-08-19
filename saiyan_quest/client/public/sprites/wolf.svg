@@ -1,0 +1,50 @@
+<svg width="32" height="24" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- Wolf enemy sprite in pixel art style -->
+  <defs>
+    <style>
+      .pixel { shape-rendering: crispEdges; }
+    </style>
+  </defs>
+  
+  <!-- Body (brown) -->
+  <rect x="8" y="12" width="16" height="8" fill="#8b4513" class="pixel"/>
+  
+  <!-- Head -->
+  <rect x="2" y="8" width="12" height="8" fill="#654321" class="pixel"/>
+  
+  <!-- Snout -->
+  <rect x="0" y="10" width="4" height="4" fill="#654321" class="pixel"/>
+  
+  <!-- Ears -->
+  <rect x="4" y="6" width="3" height="4" fill="#654321" class="pixel"/>
+  <rect x="9" y="6" width="3" height="4" fill="#654321" class="pixel"/>
+  
+  <!-- Eyes (red/aggressive) -->
+  <rect x="6" y="9" width="2" height="2" fill="#ff0000" class="pixel"/>
+  <rect x="10" y="9" width="2" height="2" fill="#ff0000" class="pixel"/>
+  
+  <!-- Nose -->
+  <rect x="1" y="11" width="2" height="2" fill="#000000" class="pixel"/>
+  
+  <!-- Mouth/teeth -->
+  <rect x="3" y="13" width="4" height="1" fill="#000000" class="pixel"/>
+  <rect x="4" y="14" width="1" height="1" fill="#ffffff" class="pixel"/>
+  <rect x="6" y="14" width="1" height="1" fill="#ffffff" class="pixel"/>
+  
+  <!-- Legs -->
+  <rect x="10" y="18" width="2" height="4" fill="#654321" class="pixel"/>
+  <rect x="14" y="18" width="2" height="4" fill="#654321" class="pixel"/>
+  <rect x="18" y="18" width="2" height="4" fill="#654321" class="pixel"/>
+  <rect x="22" y="18" width="2" height="4" fill="#654321" class="pixel"/>
+  
+  <!-- Paws -->
+  <rect x="9" y="20" width="4" height="2" fill="#333333" class="pixel"/>
+  <rect x="17" y="20" width="4" height="2" fill="#333333" class="pixel"/>
+  
+  <!-- Tail -->
+  <rect x="24" y="10" width="6" height="4" fill="#8b4513" class="pixel"/>
+  <rect x="28" y="8" width="3" height="2" fill="#8b4513" class="pixel"/>
+  
+  <!-- Belly -->
+  <rect x="10" y="14" width="12" height="4" fill="#deb887" class="pixel"/>
+</svg>

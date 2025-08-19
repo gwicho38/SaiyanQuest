@@ -14,6 +14,13 @@ export default defineConfig({
     runtimeErrorOverlay(),
     glsl(), // Add GLSL shader support
   ],
+  optimizeDeps: {
+    exclude: ['react-use-measure'], // Exclude problematic package from pre-bundling
+    force: true, // Force re-optimization
+  },
+  ssr: {
+    noExternal: ['react-use-measure'], // Handle as internal dependency
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),

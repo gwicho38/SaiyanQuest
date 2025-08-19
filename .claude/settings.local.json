@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.spriters-resource.com)",
+      "Bash(mkdir:*)",
+      "Bash(curl:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(tree:*)",
+      "Bash(kill:*)",
+      "Bash(npm run build:*)",
+      "Bash(export PATH=\"$HOME/.bun/bin:$PATH\")",
+      "Bash(bun:*)",
+      "Bash(grep:*)",
+      "Bash(lsof:*)",
+      "Bash(PORT=3000 bun run dev)",
+      "Bash(cp:*)",
+      "Bash(pkill:*)",
+      "Bash(true)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
