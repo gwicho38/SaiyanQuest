@@ -18,29 +18,40 @@ interface MeleeAttack {
   timestamp: number;
 }
 
+interface SolarFlareEffect {
+  id: string;
+  position: Vector3;
+  timestamp: number;
+  radius: number;
+}
+
 interface CombatState {
   kiBlasts: KiBlast[];
   meleeAttacks: MeleeAttack[];
+  solarFlares: SolarFlareEffect[];
   
   // Actions
-  createKiBlast: (position: Vector3, direction: string) => void;
+  createKiBlast: (position: Vector3, direction: string, damage?: number, speed?: number, color?: string) => void;
   removeKiBlast: (id: string) => void;
   performMeleeAttack: (position: Vector3, direction: string) => void;
   removeMeleeAttack: (id: string) => void;
+  createSolarFlare: (position: Vector3) => void;
+  removeSolarFlare: (id: string) => void;
   clearAllProjectiles: () => void;
 }
 
 export const useCombatStore = create<CombatState>((set, get) => ({
   kiBlasts: [],
   meleeAttacks: [],
+  solarFlares: [],
   
-  createKiBlast: (position, direction) => {
+  createKiBlast: (position, direction, damage = 25, speed = 15, color = '#00bfff') => {
     const blast: KiBlast = {
       id: nanoid(),
       position: position.clone(),
       direction,
-      speed: 15,
-      damage: 25
+      speed,
+      damage
     };
     
     console.log(`Created Ki Blast at ${position.x}, ${position.z} going ${direction}`);
@@ -83,10 +94,37 @@ export const useCombatStore = create<CombatState>((set, get) => ({
     }));
   },
   
+  createSolarFlare: (position) => {
+    const flare: SolarFlareEffect = {
+      id: nanoid(),
+      position: position.clone(),
+      timestamp: Date.now(),
+      radius: 10
+    };
+    
+    console.log(`Created Solar Flare at ${position.x}, ${position.z}`);
+    
+    set((state) => ({
+      solarFlares: [...state.solarFlares, flare]
+    }));
+    
+    // Remove solar flare after 3 seconds
+    setTimeout(() => {
+      set((state) => ({
+        solarFlares: state.solarFlares.filter(f => f.id !== flare.id)
+      }));
+    }, 3000);
+  },
+
+  removeSolarFlare: (id) => set((state) => ({
+    solarFlares: state.solarFlares.filter(flare => flare.id !== id)
+  })),
+
   clearAllProjectiles: () => {
     set({
       kiBlasts: [],
-      meleeAttacks: []
+      meleeAttacks: [],
+      solarFlares: []
     });
   }
 }));

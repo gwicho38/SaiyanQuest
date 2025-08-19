@@ -7,6 +7,8 @@ import Player from './Player';
 import Environment from './Environment';
 import Wolf from './Enemies/Wolf';
 import CombatSystem from './Combat/CombatSystem';
+import AttackSystem from './Combat/AttackSystem';
+import GameOverSystem from './Systems/GameOverSystem';
 import * as THREE from 'three';
 
 enum Controls {
@@ -55,6 +57,10 @@ export default function GameCanvas() {
 
   return (
     <>
+      {/* Game Systems */}
+      <GameOverSystem />
+      <AttackSystem />
+      
       {/* Game Environment */}
       <Environment area={currentArea} />
       

@@ -25,11 +25,11 @@ const controls = [
   { name: Controls.down, keys: ["ArrowDown", "KeyS"] },
   { name: Controls.left, keys: ["ArrowLeft", "KeyA"] },
   { name: Controls.right, keys: ["ArrowRight", "KeyD"] },
-  { name: Controls.punch, keys: ["KeyZ"] }, // A button equivalent
-  { name: Controls.energyAttack, keys: ["KeyX"] }, // B button equivalent
-  { name: Controls.cycleAttack, keys: ["KeyC"] }, // L button equivalent
-  { name: Controls.flight, keys: ["ShiftLeft"] }, // Select equivalent
-  { name: Controls.menu, keys: ["Enter"] }, // Start equivalent
+  { name: Controls.punch, keys: ["KeyZ", "Enter"] }, // A button - primary action
+  { name: Controls.energyAttack, keys: ["KeyX", "Escape"] }, // B button - secondary action
+  { name: Controls.cycleAttack, keys: ["KeyQ"] }, // L button - cycle attacks
+  { name: Controls.flight, keys: ["Tab"] }, // Select - menu/status
+  { name: Controls.menu, keys: ["Space"] }, // Start - pause
 ];
 
 function App() {

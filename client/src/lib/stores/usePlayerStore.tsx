@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { Vector3 } from "three";
+import { GBA_CONFIG, DERIVED_CONFIG } from "../game/GBAConfig";
 
 interface PlayerState {
   // Position and movement
@@ -17,6 +18,10 @@ interface PlayerState {
   level: number;
   experience: number;
   nextLevelExp: number;
+  
+  // Combat state
+  isInvincible: boolean;
+  lastDamageTime: number;
   
   // Abilities
   canFly: boolean;
@@ -43,16 +48,20 @@ export const usePlayerStore = create<PlayerState>()(
     position: new Vector3(0, 0, 0),
     direction: "down",
     isMoving: false,
-    moveSpeed: 5,
+    moveSpeed: GBA_CONFIG.BALANCE.PLAYER.MOVE_SPEED,
     
-    // Initial stats
-    health: 100,
-    maxHealth: 100,
-    energy: 100,
-    maxEnergy: 100,
+    // Initial stats using GBA config
+    health: GBA_CONFIG.BALANCE.PLAYER.BASE_HEALTH,
+    maxHealth: DERIVED_CONFIG.PLAYER_HEALTH_PER_LEVEL(1),
+    energy: GBA_CONFIG.BALANCE.PLAYER.BASE_ENERGY,
+    maxEnergy: DERIVED_CONFIG.PLAYER_ENERGY_PER_LEVEL(1),
     level: 1,
     experience: 0,
-    nextLevelExp: 100,
+    nextLevelExp: DERIVED_CONFIG.EXP_TO_NEXT_LEVEL(1),
+    
+    // Initial combat state
+    isInvincible: false,
+    lastDamageTime: 0,
     
     // Initial abilities
     canFly: false,
@@ -68,9 +77,38 @@ export const usePlayerStore = create<PlayerState>()(
     setIsMoving: (moving) => set({ isMoving: moving }),
     
     takeDamage: (amount) => set((state) => {
+      const currentTime = Date.now();
+      
+      // Check invincibility frames using GBA config
+      if (state.isInvincible || currentTime - state.lastDamageTime < GBA_CONFIG.BALANCE.PLAYER.INVINCIBILITY_FRAMES) {
+        return {}; // No damage taken
+      }
+      
       const newHealth = Math.max(0, state.health - amount);
       console.log(`Player took ${amount} damage. Health: ${newHealth}/${state.maxHealth}`);
-      return { health: newHealth };
+      
+      // Set invincibility frames
+      const updates: any = { 
+        health: newHealth, 
+        isInvincible: true, 
+        lastDamageTime: currentTime 
+      };
+      
+      // Remove invincibility after frames using GBA config
+      setTimeout(() => {
+        set({ isInvincible: false });
+      }, GBA_CONFIG.BALANCE.PLAYER.INVINCIBILITY_FRAMES);
+      
+      // Game over when health reaches 0
+      if (newHealth <= 0) {
+        console.log("GAME OVER - Player died!");
+        setTimeout(() => {
+          const gameStore = require('./useGameStore').useGameStore.getState();
+          gameStore.setGamePhase('gameOver');
+        }, 100);
+      }
+      
+      return updates;
     }),
     
     heal: (amount) => set((state) => ({
@@ -128,6 +166,8 @@ export const usePlayerStore = create<PlayerState>()(
       level: 1,
       experience: 0,
       nextLevelExp: 100,
+      isInvincible: false,
+      lastDamageTime: 0,
       canFly: false,
       isFlying: false,
       currentAttack: "ki_blast"

@@ -5,6 +5,7 @@ import { Mesh } from 'three';
 import { usePlayerStore } from '../../lib/stores/usePlayerStore';
 import { useCombatStore } from '../../lib/stores/useCombatStore';
 import { useAudio } from '../../lib/stores/useAudio';
+import { GBA_CONFIG } from '../../lib/game/GBAConfig';
 import * as THREE from 'three';
 
 enum Controls {
@@ -32,12 +33,12 @@ export default function Player() {
     setIsMoving,
     direction,
     setDirection,
-    moveSpeed,
     drainEnergy,
-    rechargeEnergy
+    rechargeEnergy,
+    isInvincible
   } = usePlayerStore();
   
-  const { createKiBlast, performMeleeAttack } = useCombatStore();
+  const { performMeleeAttack } = useCombatStore();
   const { playHit } = useAudio();
   
   const [lastMoveTime, setLastMoveTime] = useState(0);
@@ -51,8 +52,8 @@ export default function Player() {
     let moved = false;
     let newDirection = direction;
     
-    // Movement logic
-    const moveDistance = moveSpeed * delta;
+    // Movement logic using GBA-authentic speed
+    const moveDistance = GBA_CONFIG.BALANCE.PLAYER.MOVE_SPEED * delta;
     let newX = position.x;
     let newZ = position.z;
     
@@ -93,9 +94,9 @@ export default function Player() {
     // Update mesh position
     meshRef.current.position.set(position.x, position.y, position.z);
     
-    // Energy recharge when not attacking
+    // Energy recharge using GBA-authentic rate
     if (!isAttacking) {
-      rechargeEnergy(20 * delta); // Recharge 20 energy per second
+      rechargeEnergy(GBA_CONFIG.BALANCE.PLAYER.ENERGY_REGEN_RATE * delta);
     }
   });
 
@@ -110,39 +111,28 @@ export default function Player() {
           performMeleeAttack(position, direction);
           playHit();
           
-          // Reset attack state
-          setTimeout(() => setIsAttacking(false), 300);
-        }
-      }
-    );
-
-    const unsubscribeEnergy = subscribe(
-      state => state.energyAttack,
-      (pressed) => {
-        if (pressed && energy >= 10 && !isAttacking) {
-          console.log("Ki blast attack!");
-          setIsAttacking(true);
-          drainEnergy(10);
-          createKiBlast(position, direction);
-          
-          setTimeout(() => setIsAttacking(false), 200);
+          // Reset attack state using GBA timing
+          setTimeout(() => setIsAttacking(false), GBA_CONFIG.BALANCE.PLAYER.PUNCH_COOLDOWN);
         }
       }
     );
 
     return () => {
       unsubscribePunch();
-      unsubscribeEnergy();
     };
-  }, [subscribe, position, direction, energy, isAttacking, performMeleeAttack, createKiBlast, drainEnergy, playHit]);
+  }, [subscribe, position, direction, isAttacking, performMeleeAttack, playHit]);
 
   return (
     <group>
-      {/* Player mesh - representing Goku */}
+      {/* Player mesh - representing Goku with GBA-style colors and invincibility effect */}
       <mesh ref={meshRef} position={[position.x, position.y, position.z]}>
         <boxGeometry args={[1, 1.5, 0.5]} />
         <meshStandardMaterial 
-          color={isAttacking ? "#ffff00" : "#ff8c00"} // Golden when attacking (Super Saiyan hint)
+          color={isAttacking ? "#ffff00" : "#ff8c00"} // Golden when attacking, orange gi normally
+          transparent={isInvincible}
+          opacity={isInvincible ? 0.5 : 1.0} // Flash effect when invincible
+          emissive={isInvincible ? "#ffffff" : "#000000"}
+          emissiveIntensity={isInvincible ? 0.2 : 0}
         />
       </mesh>
       
