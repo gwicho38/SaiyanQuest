@@ -1,5 +1,0 @@
-cargo:rustc-link-search=/Users/lefv/repos/SaiyanQuest/target/thumbv4t-none-eabi/debug/build/agb-2dbc231cedc2f6b5/out
-cargo:rerun-if-changed=src/gba.ld
-cargo:rerun-if-changed=src/gba_mb.ld
-cargo:rerun-if-changed=build.rs
-cargo:rerun-if-env-changed=CARGO_FEATURE_MULTIBOOT

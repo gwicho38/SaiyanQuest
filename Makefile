@@ -8,6 +8,10 @@
 TARGET := saiyan_quest
 RUST_TARGET := thumbv4t-none-eabi
 
+# Use cargo from the rust-toolchain.toml specified version
+CARGO := cargo
+RUSTC := rustc
+
 # Show available make commands on default
 default:
 	@echo "=== Dragon Ball Z: Legacy of Goku - Rust GBA Game ==="
@@ -43,18 +47,18 @@ default:
 # Build debug ROM
 build:
 	@echo "Building Rust GBA ROM..."
-	cargo build -Z build-std=core,alloc
+	$(CARGO) build -Z build-std=core,alloc
 	@echo "✅ Debug ROM built"
 
 # Build and run in emulator
 run:
 	@echo "Building and running Rust GBA ROM..."
-	cargo run -Z build-std=core,alloc
+	$(CARGO) run -Z build-std=core,alloc
 
 # Build optimized release ROM
 release:
 	@echo "Building optimized release ROM..."
-	cargo build --release -Z build-std=core,alloc
+	$(CARGO) build --release -Z build-std=core,alloc
 	@echo "✅ Release ROM built at: target/$(RUST_TARGET)/release/$(TARGET).gba"
 
 # Just play if ROM exists
@@ -74,20 +78,20 @@ play:
 # Development commands
 clean:
 	@echo "Cleaning build files..."
-	cargo clean
+	$(CARGO) clean
 	@echo "✅ Clean complete"
 
 check:
 	@echo "Running cargo check..."
-	cargo check --target $(RUST_TARGET)
+	$(CARGO) check --target $(RUST_TARGET)
 
 clippy:
 	@echo "Running clippy lints..."
-	cargo clippy --target $(RUST_TARGET)
+	$(CARGO) clippy --target $(RUST_TARGET)
 
 fmt:
 	@echo "Formatting Rust code..."
-	cargo fmt
+	$(CARGO) fmt
 
 # Install dependencies
 deps:

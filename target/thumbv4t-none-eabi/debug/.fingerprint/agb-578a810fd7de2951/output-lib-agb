@@ -1,0 +1,4 @@
+error: <inline asm>:6:1: invalid instruction
+agb_thumb_func agb_rs__WramReadByte
+^
+
