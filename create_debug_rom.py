@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+"""
+Create a debug ROM with very simple ARM code to test execution
+"""
+
+import struct
+
+def create_debug_rom():
+    """Create ROM with simple, direct ARM instructions"""
+    
+    # 256KB ROM
+    rom = bytearray(256 * 1024)
+    
+    # === GBA Header (same as before) ===
+    rom[0x00:0x04] = struct.pack('<I', 0xEA00002E)  # b 0xC0
+    
+    # Nintendo Logo
+    nintendo_logo = bytes([
+        0x24, 0xFF, 0xAE, 0x51, 0x69, 0x9A, 0xA2, 0x21, 0x3D, 0x84, 0x82, 0x0A,
+        0x84, 0xE4, 0x09, 0xAD, 0x11, 0x24, 0x8B, 0x98, 0xC0, 0x81, 0x7F, 0x21,
+        0xA3, 0x52, 0xBE, 0x19, 0x93, 0x09, 0xCE, 0x20, 0x10, 0x46, 0x4A, 0x4A,
+        0xF8, 0x27, 0x31, 0xEC, 0x58, 0xC7, 0xE8, 0x33, 0x82, 0xE3, 0xCE, 0xBF,
+        0x85, 0xF4, 0xDF, 0x94, 0xCE, 0x4B, 0x09, 0xC1, 0x94, 0x56, 0x8A, 0xC0,
+        0x13, 0x72, 0xA7, 0xFC, 0x9F, 0x84, 0x4D, 0x73, 0xA3, 0xCA, 0x9A, 0x61,
+        0x58, 0x97, 0xA3, 0x27, 0xFC, 0x03, 0x98, 0x76, 0x23, 0x1D, 0xC7, 0x61,
+        0x03, 0x04, 0xAE, 0x56, 0xBF, 0x38, 0x84, 0x00, 0x40, 0xA7, 0x0E, 0xFD,
+        0xFF, 0x52, 0xFE, 0x03, 0x6F, 0x95, 0x30, 0xF1, 0x97, 0xFB, 0xC0, 0x85,
+        0x60, 0xD6, 0x80, 0x25, 0xA9, 0x63, 0xBE, 0x03, 0x01, 0x4E, 0x38, 0xE2,
+        0xF9, 0xA2, 0x34, 0xFF, 0xBB, 0x3E, 0x03, 0x44, 0x78, 0x00, 0x90, 0xCB,
+        0x88, 0x11, 0x3A, 0x94, 0x65, 0xC0, 0x7C, 0x63, 0x87, 0xF0, 0x3C, 0xAF,
+        0xD6, 0x25, 0xE4, 0x8B, 0x38, 0x0A, 0xAC, 0x72, 0x21, 0xD4, 0xF8, 0x07
+    ])
+    rom[0x04:0x04+len(nintendo_logo)] = nintendo_logo
+    
+    # Game info
+    rom[0xA0:0xAC] = b"DEBUG TEST\x00\x00"
+    rom[0xAC:0xB0] = b"DBUG"
+    rom[0xB0:0xB2] = b"01"
+    rom[0xB2] = 0x96
+    
+    # Calculate checksum
+    checksum = 0
+    for i in range(0xA0, 0xBD):
+        checksum -= rom[i]
+    rom[0xBD] = (checksum - 0x19) & 0xFF
+    
+    # === Simpler ARM Code at 0xC0 ===
+    code = 0xC0
+    
+    # Very basic ARM instructions with immediate values
+    instructions = [
+        # First, just write to display control with immediate addressing
+        0xE3A00403,  # mov r0, #0x403         ; MODE_3 | BG2_ON
+        0xE3A01201,  # mov r1, #0x10000000    ; start building 0x04000000
+        0xE3811102,  # orr r1, r1, #0x4000000 ; r1 = 0x04000000
+        0xE5C10000,  # strb r0, [r1]          ; write low byte
+        0xE5C10001,  # strb r0, [r1, #1]      ; write high byte (may be unnecessary)
+        
+        # Now write to VRAM with blue color (easier to see)
+        0xE3A007C0,  # mov r0, #0x7C00        ; blue color (0x7C00)
+        0xE3A01201,  # mov r1, #0x10000000    ; start building 0x06000000  
+        0xE3811106,  # orr r1, r1, #0x6000000 ; r1 = 0x06000000 (VRAM)
+        
+        # Write several pixels
+        0xE1C100B0,  # strh r0, [r1]          ; pixel 0
+        0xE1C100B2,  # strh r0, [r1, #2]      ; pixel 1  
+        0xE1C100B4,  # strh r0, [r1, #4]      ; pixel 2
+        0xE1C100B6,  # strh r0, [r1, #6]      ; pixel 3
+        
+        # Try to fill a small area (8x8 pixels = 64 pixels)
+        0xE3A02040,  # mov r2, #64            ; counter
+        0xE3A03000,  # mov r3, #0             ; offset
+        
+        # Loop: write pixel and increment
+        0xE0814003,  # add r4, r1, r3         ; r4 = VRAM + offset
+        0xE1C400B0,  # strh r0, [r4]          ; write blue pixel
+        0xE2833002,  # add r3, r3, #2         ; next pixel (2 bytes)
+        0xE2522001,  # subs r2, r2, #1        ; decrement counter
+        0x1AFFFFFB,  # bne loop               ; branch back if not zero
+        
+        # Infinite loop
+        0xEAFFFFFE,  # b .                    ; infinite loop
+    ]
+    
+    # Write instructions
+    for i, instr in enumerate(instructions):
+        offset = code + (i * 4)
+        rom[offset:offset+4] = struct.pack('<I', instr)
+    
+    # Write ROM
+    with open('debug_blue_test.gba', 'wb') as f:
+        f.write(rom)
+    
+    print("Created debug_blue_test.gba")
+    print("This ROM should show BLUE pixels in top-left corner")
+    print("Uses immediate addressing and simpler ARM code")
+    print("If this works, we'll know the issue was with our previous addressing")
+    
+    return True
+
+if __name__ == "__main__":
+    create_debug_rom()

@@ -1,6 +1,7 @@
 #include <gba.h>
 #include "player.h"
 #include "rpg_system.h"
+#include "init.h"
 
 // Basic game state
 volatile u16 frame_counter = 0;

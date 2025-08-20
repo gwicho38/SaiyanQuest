@@ -36,9 +36,34 @@
       "WebFetch(domain:developer.mozilla.org)",
       "Bash(git pull:*)",
       "Bash(git stash:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(brew list:*)",
+      "Bash(brew search:*)",
+      "Bash(sudo mkdir:*)",
+      "Bash(brew tap:*)",
+      "Bash(brew install:*)",
+      "Bash(clang:*)",
+      "Bash(git clone:*)",
+      "Bash(gcc:*)",
+      "Bash(make:*)",
+      "Bash(mv:*)",
+      "Bash(python3:*)",
+      "Bash(open:*)",
+      "Bash(objdump:*)",
+      "Bash(objcopy:*)",
+      "Bash(git submodule:*)",
+      "Bash(git init:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "/opt/devkitpro/devkitARM/bin",
+      "/Users/lefv/.local",
+      "/private/tmp/libgba",
+      "/usr/bin"
+    ]
   }
 }

@@ -1,0 +1,175 @@
+# Complete Dragon Ball Z GBA Game Makefile
+# Builds from C source to playable GBA ROM
+
+# Tools and settings
+CC := clang
+OBJDUMP := objdump
+PYTHON := python3
+EMULATOR := mGBA
+
+# Compiler flags for GBA (ARM7TDMI)
+CFLAGS := -target armv4t-none-eabi \
+          -mcpu=arm7tdmi \
+          -mthumb \
+          -ffast-math \
+          -fomit-frame-pointer \
+          -Wall -O2 \
+          -nostdlib \
+          -I./include_gba \
+          -I./include
+
+# Project settings
+TARGET := dbz_complete_game
+ROM_BUILDER := build_dbz_game.py
+
+# Source files
+C_SOURCES := $(wildcard source/*.c) $(wildcard source/*/*.c)
+C_OBJECTS := $(C_SOURCES:.c=.o)
+
+ASM_SOURCES := $(wildcard source/*.s)
+ASM_OBJECTS := $(ASM_SOURCES:.s=.o)
+
+ALL_OBJECTS := $(C_OBJECTS) $(ASM_OBJECTS)
+
+# Build targets
+.PHONY: all clean rom test debug install-deps help
+
+# Default target - build complete ROM
+all: $(TARGET).gba
+
+# Build ROM from compiled objects
+$(TARGET).gba: $(ALL_OBJECTS) $(ROM_BUILDER)
+	@echo "Building complete Dragon Ball Z GBA ROM..."
+	$(PYTHON) $(ROM_BUILDER)
+	@echo "✅ ROM built: $(TARGET).gba"
+	@echo "🎮 Ready to play! Use: make test"
+
+# Compile C source files
+%.o: %.c
+	@echo "Compiling $<..."
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# Assemble source files  
+%.o: %.s
+	@echo "Assembling $<..."
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# Test ROM in emulator
+test: $(TARGET).gba
+	@echo "🚀 Launching Dragon Ball Z game in emulator..."
+	@if [ -d "/Applications/mGBA.app" ]; then \
+		open -a "mGBA" $(TARGET).gba; \
+	else \
+		echo "❌ mGBA not found. Install with: make install-deps"; \
+		echo "Or manually open: $(TARGET).gba"; \
+	fi
+
+# Debug - build and show ROM info
+debug: $(TARGET).gba
+	@echo "=== Dragon Ball Z ROM Debug Info ==="
+	@echo "ROM file: $(TARGET).gba"
+	@file $(TARGET).gba
+	@echo "Size: $$(du -h $(TARGET).gba | cut -f1)"
+	@echo "Header check:"
+	@hexdump -C $(TARGET).gba | head -3
+	@echo "Compiled objects:"
+	@ls -la $(ALL_OBJECTS) 2>/dev/null || echo "No object files found"
+
+# Install development dependencies
+install-deps:
+	@echo "Installing GBA development dependencies..."
+	@echo "Installing mGBA emulator..."
+	@if command -v brew >/dev/null 2>&1; then \
+		brew install --cask mgba || true; \
+		echo "✅ mGBA installed"; \
+	else \
+		echo "❌ Homebrew not found. Please install manually:"; \
+		echo "https://mgba.io/downloads.html"; \
+	fi
+	@echo "Checking for required tools..."
+	@command -v clang >/dev/null 2>&1 && echo "✅ clang found" || echo "❌ clang missing"
+	@command -v python3 >/dev/null 2>&1 && echo "✅ python3 found" || echo "❌ python3 missing"
+	@command -v objdump >/dev/null 2>&1 && echo "✅ objdump found" || echo "❌ objdump missing"
+
+# Alternative ROM builders for testing
+test-roms: stable_display.gba valid_red_test.gba debug_blue_test.gba
+	@echo "Built test ROMs:"
+	@ls -la *.gba
+
+stable_display.gba: create_stable_display.py
+	$(PYTHON) create_stable_display.py
+
+valid_red_test.gba: create_valid_gba_rom.py  
+	$(PYTHON) create_valid_gba_rom.py
+
+debug_blue_test.gba: create_debug_rom.py
+	$(PYTHON) create_debug_rom.py
+
+# Clean build artifacts
+clean:
+	@echo "Cleaning build files..."
+	@rm -f $(ALL_OBJECTS)
+	@rm -f *.gba
+	@rm -f *.elf *.bin
+	@echo "✅ Clean complete"
+
+# Clean only ROM files, keep objects
+clean-roms:
+	@echo "Cleaning ROM files..."
+	@rm -f *.gba
+	@echo "✅ ROM files cleaned"
+
+# Show build information
+info:
+	@echo "=== Dragon Ball Z GBA Build System ==="
+	@echo "Target: $(TARGET).gba"
+	@echo "Compiler: $(CC)"
+	@echo "Sources found:"
+	@echo "  C files: $(words $(C_SOURCES)) ($(C_SOURCES))"
+	@echo "  ASM files: $(words $(ASM_SOURCES)) ($(ASM_SOURCES))"
+	@echo "Objects: $(words $(ALL_OBJECTS))"
+	@echo "Flags: $(CFLAGS)"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  make all      - Build complete ROM"
+	@echo "  make test     - Build and launch in emulator"  
+	@echo "  make debug    - Build with debug info"
+	@echo "  make clean    - Clean all build files"
+	@echo "  make install-deps - Install dependencies"
+
+# Help target
+help: info
+
+# Force rebuild
+rebuild: clean all
+
+# Quick build and test cycle
+dev: clean all test
+
+# Create release build
+release: clean
+	@echo "Creating release build..."
+	@$(MAKE) all
+	@echo "✅ Release build complete: $(TARGET).gba"
+	@echo "📦 ROM ready for distribution"
+
+# Check if we can build (dependencies)
+check:
+	@echo "Checking build environment..."
+	@command -v $(CC) >/dev/null 2>&1 && echo "✅ $(CC) found" || (echo "❌ $(CC) missing" && exit 1)
+	@command -v $(PYTHON) >/dev/null 2>&1 && echo "✅ $(PYTHON) found" || (echo "❌ $(PYTHON) missing" && exit 1)
+	@command -v $(OBJDUMP) >/dev/null 2>&1 && echo "✅ $(OBJDUMP) found" || (echo "❌ $(OBJDUMP) missing" && exit 1)
+	@test -f $(ROM_BUILDER) && echo "✅ ROM builder found" || (echo "❌ $(ROM_BUILDER) missing" && exit 1)
+	@test -d include_gba && echo "✅ GBA headers found" || (echo "❌ GBA headers missing" && exit 1)
+	@echo "✅ Build environment OK"
+
+# Advanced targets
+install: $(TARGET).gba
+	@echo "Installing ROM to Games directory..."
+	@mkdir -p ~/Games/GBA/
+	@cp $(TARGET).gba ~/Games/GBA/
+	@echo "✅ Installed to ~/Games/GBA/$(TARGET).gba"
+
+# Show ROM in Finder
+show: $(TARGET).gba
+	@open -R $(TARGET).gba
