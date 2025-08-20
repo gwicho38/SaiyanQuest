@@ -1,13 +1,8 @@
 [build]
-# Cross-compile to Game Boy Advance target (Thumb ISA)
 target = "thumbv4t-none-eabi"
 
 [unstable]
-build-std = ["core", "alloc", "compiler_builtins"]
-build-std-features = ["compiler-builtins-mem"]
+build-std = ["core", "alloc"]
 
 [target.thumbv4t-none-eabi]
-rustflags = [
-	"-Clinker=arm-none-eabi-ld",
-	"-Clink-arg=-T../gba.ld",
-]
+runner = "mgba-qt"

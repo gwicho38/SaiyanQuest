@@ -1,133 +1,136 @@
-# Dragon Ball Z: Legacy of Goku - GBA Game Makefile
-# Complete build system for C source to playable GBA ROM
-
-# Use the comprehensive Makefile for actual building
-include Makefile.complete
+# Dragon Ball Z: Legacy of Goku - Rust GBA Game Makefile
+# Complete build system for Rust source to playable GBA ROM
 
 # Set default target to show available commands
 .DEFAULT_GOAL := default
 
 # Override default settings for our project
-TARGET := valid_red_test
-ROM_BUILDER := create_valid_gba_rom.py
+TARGET := saiyan_quest
+RUST_TARGET := thumbv4t-none-eabi
 
 # Show available make commands on default
 default:
-	@echo "=== Dragon Ball Z: Legacy of Goku - GBA Game ==="
+	@echo "=== Dragon Ball Z: Legacy of Goku - Rust GBA Game ==="
 	@echo "Available make commands:"
 	@echo ""
 	@echo "🎮 Game Commands:"
-	@echo "  make all      - Build complete ROM"
-	@echo "  make game     - Build and play immediately"
+	@echo "  make build    - Build Rust GBA ROM"
+	@echo "  make run      - Build and run in emulator"
+	@echo "  make release  - Build optimized release ROM"
 	@echo "  make play     - Launch game if ROM exists"
-	@echo "  make test     - Build and launch in emulator"
 	@echo ""
 	@echo "🔧 Development Commands:"
 	@echo "  make clean    - Clean all build files"
-	@echo "  make debug    - Build with debug information"
-	@echo "  make rebuild  - Clean and rebuild"
-	@echo "  make dev      - Quick development cycle"
+	@echo "  make check    - Run cargo check"
+	@echo "  make clippy   - Run clippy lints"
+	@echo "  make fmt      - Format Rust code"
 	@echo ""
 	@echo "📦 Utility Commands:"
 	@echo "  make info     - Show build information"
-	@echo "  make check    - Check build environment"
-	@echo "  make install-deps - Install dependencies"
+	@echo "  make deps     - Install Rust dependencies"
 	@echo "  make help     - Show detailed help"
 	@echo ""
-	@echo "Current ROM: $(TARGET).gba"
-	@if [ -f $(TARGET).gba ]; then \
-		echo "Status: ✅ ROM exists ($$(du -h $(TARGET).gba | cut -f1))"; \
+	@echo "Current ROM: target/$(RUST_TARGET)/release/$(TARGET).gba"
+	@if [ -f target/$(RUST_TARGET)/release/$(TARGET).gba ]; then \
+		echo "Status: ✅ ROM exists ($$(du -h target/$(RUST_TARGET)/release/$(TARGET).gba | cut -f1))"; \
 	else \
 		echo "Status: ❌ ROM not built yet"; \
 	fi
 
-# Quick aliases for common tasks
-.PHONY: game play
+# Rust build targets
+.PHONY: build run release play clean check clippy fmt deps info help
 
-# Build and play the game immediately
-game: all test
+# Build debug ROM
+build:
+	@echo "Building Rust GBA ROM..."
+	cargo build -Z build-std=core,alloc
+	@echo "✅ Debug ROM built"
+
+# Build and run in emulator
+run:
+	@echo "Building and running Rust GBA ROM..."
+	cargo run -Z build-std=core,alloc
+
+# Build optimized release ROM
+release:
+	@echo "Building optimized release ROM..."
+	cargo build --release -Z build-std=core,alloc
+	@echo "✅ Release ROM built at: target/$(RUST_TARGET)/release/$(TARGET).gba"
 
 # Just play if ROM exists
 play: 
-	@if [ -f $(TARGET).gba ]; then \
+	@if [ -f target/$(RUST_TARGET)/release/$(TARGET).gba ]; then \
 		if [ -d "/Applications/mGBA.app" ]; then \
-			open -a "mGBA" $(TARGET).gba; \
+			open -a "mGBA" target/$(RUST_TARGET)/release/$(TARGET).gba; \
 		else \
-			echo "❌ mGBA not found. Install with: make install-deps"; \
-			echo "Or manually open: $(TARGET).gba"; \
+			echo "❌ mGBA not found. Install mGBA emulator"; \
+			echo "Or manually open: target/$(RUST_TARGET)/release/$(TARGET).gba"; \
 		fi; \
 	else \
 		echo "ROM not found. Building first..."; \
-		$(MAKE) all test; \
+		$(MAKE) release && $(MAKE) play; \
 	fi
 
-# Show what the original simple Makefile used to do
-original:
-	@echo "Original Makefile tried to use devkitARM (not installed)"
-	@echo "This new Makefile uses clang + Python ROM builder instead"
-	@echo "Run: make all     (to build complete ROM)"
-	@echo "Run: make test    (to build and play)"
-	@echo "Run: make help    (for all options)"
+# Development commands
+clean:
+	@echo "Cleaning build files..."
+	cargo clean
+	@echo "✅ Clean complete"
 
-# --- Rust GBA helpers ---
-RUST_DIR := rust
-RUST_TARGET := armv4t-none-eabi
-RUST_ELF := $(RUST_DIR)/target/$(RUST_TARGET)/release/saiyan_quest_rust
-RUST_GBA := $(RUST_ELF).gba
+check:
+	@echo "Running cargo check..."
+	cargo check --target $(RUST_TARGET)
 
-.PHONY: rust-init rust-build rust-run rust-clean
+clippy:
+	@echo "Running clippy lints..."
+	cargo clippy --target $(RUST_TARGET)
 
-rust-init:
-	@echo "Initializing Rust GBA toolchain..."
-	@brew list rustup >/dev/null 2>&1 || brew install rustup-init >/dev/null 2>&1 || true
-	@export PATH="/opt/homebrew/opt/rustup/bin:$$PATH"; rustup toolchain install nightly >/dev/null 2>&1 || true
-	@export PATH="/opt/homebrew/opt/rustup/bin:$$PATH"; rustup default nightly >/dev/null 2>&1 || true
-	@brew list arm-none-eabi-binutils >/dev/null 2>&1 || brew install arm-none-eabi-binutils >/dev/null 2>&1 || true
-	@echo "✅ Rust GBA toolchain ready"
+fmt:
+	@echo "Formatting Rust code..."
+	cargo fmt
 
-rust-build: rust-init
-	@echo "Generating sprites (uv)..."
-	@uv run --with pillow python3 tools/sprite_converter.py | cat
-	@echo "Building Rust GBA crate (nightly)..."
-	@export PATH="/opt/homebrew/opt/rustup/bin:$$PATH"; cd $(RUST_DIR) && cargo +nightly build --release | cat
-	@echo "Converting ELF -> raw BIN..."
-	@arm-none-eabi-objcopy -O binary $(RUST_ELF) $(RUST_ELF).bin
-	@echo "Packing valid GBA header..."
-	@python3 pack_rust_gba.py $(RUST_ELF).bin $(RUST_GBA)
-	@echo "GBA ROM: $(RUST_GBA)"
-	@echo "✅ Rust ROM built at: $(RUST_GBA)"
+# Install dependencies
+deps:
+	@echo "Installing Rust dependencies..."
+	rustup toolchain install nightly
+	rustup component add rust-src --toolchain nightly
+	@echo "✅ Dependencies installed"
 
-rust-run: rust-build
-	@echo "Launching Rust ROM in mGBA..."
-	@if [ -x "/Applications/mGBA.app/Contents/MacOS/mGBA" ]; then \
-		"/Applications/mGBA.app/Contents/MacOS/mGBA" $(RUST_GBA) &>/dev/null & \
+# Show build information
+info:
+	@echo "=== Build Information ==="
+	@echo "Target: $(RUST_TARGET)"
+	@echo "Binary: $(TARGET)"
+	@echo "Rust version: $$(rustc --version)"
+	@echo "Cargo version: $$(cargo --version)"
+	@if [ -f target/$(RUST_TARGET)/release/$(TARGET).gba ]; then \
+		echo "Release ROM: ✅ ($$(du -h target/$(RUST_TARGET)/release/$(TARGET).gba | cut -f1))"; \
 	else \
-		open -a "mGBA" --args $(RUST_GBA); \
+		echo "Release ROM: ❌ Not built"; \
 	fi
 
-rust-clean:
-	@cd $(RUST_DIR) && cargo clean || true
+# Detailed help
+help:
+	@echo "=== Dragon Ball Z: Legacy of Goku - Rust GBA Development ==="
+	@echo ""
+	@echo "This project is now fully migrated to Rust using the AGB framework."
+	@echo "All C code has been converted to equivalent Rust implementations."
+	@echo ""
+	@echo "Quick Start:"
+	@echo "  make deps     - Install Rust target"
+	@echo "  make release  - Build optimized ROM"
+	@echo "  make play     - Launch in emulator"
+	@echo ""
+	@echo "Development:"
+	@echo "  make run      - Build and run with live reload"
+	@echo "  make check    - Quick syntax check"
+	@echo "  make clippy   - Code quality checks"
+	@echo ""
+# Legacy build targets (deprecated - use main Rust build instead)
+rust-legacy:
+	@echo "⚠️  Legacy rust/ directory build deprecated"
+	@echo "Use 'make build' or 'make release' for main Rust build"
 
-# --- AGB game helpers ---
-AGB_DIR := agb_game
-AGB_TARGET := thumbv4t-none-eabi
-AGB_ELF := $(AGB_DIR)/target/$(AGB_TARGET)/release/agb_game
-AGB_GBA := $(AGB_ELF).gba
-
-.PHONY: agb-build agb-run
-
-agb-build:
-	@echo "Building agb game (release)..."
-	@cd $(AGB_DIR) && cargo build --release | cat || true
-	@echo "Packing to GBA..."
-	@arm-none-eabi-objcopy -O binary $(AGB_ELF) $(AGB_ELF).bin || true
-	@python3 pack_rust_gba.py $(AGB_ELF).bin $(AGB_GBA) || true
-	@echo "AGB ROM: $(AGB_GBA)"
-
-agb-run: agb-build
-	@echo "Launching AGB ROM..."
-	@if [ -x "/Applications/mGBA.app/Contents/MacOS/mGBA" ]; then \
-		"/Applications/mGBA.app/Contents/MacOS/mGBA" $(AGB_GBA) &>/dev/null & \
-	else \
-		open -a "mGBA" --args $(AGB_GBA); \
-	fi
+agb-legacy:
+	@echo "⚠️  Legacy agb_game/ directory build deprecated" 
+	@echo "Use 'make build' or 'make release' for main Rust build"

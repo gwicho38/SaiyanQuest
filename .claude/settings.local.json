@@ -55,7 +55,12 @@
       "Bash(objcopy:*)",
       "Bash(git submodule:*)",
       "Bash(git init:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(rustup toolchain:*)",
+      "Bash(rustup component add:*)",
+      "Bash(rustup:*)",
+      "Bash(cargo --version)",
+      "Bash(rustc --version)"
     ],
     "deny": [],
     "ask": [],
@@ -63,7 +68,8 @@
       "/opt/devkitpro/devkitARM/bin",
       "/Users/lefv/.local",
       "/private/tmp/libgba",
-      "/usr/bin"
+      "/usr/bin",
+      "/Users/lefv/.cargo"
     ]
   }
 }
