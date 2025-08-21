@@ -1,0 +1,51 @@
+{
+  "name": "dragon-ball-z-legacy-of-goku",
+  "version": "1.0.0",
+  "description": "Dragon Ball Z: Legacy of Goku - Web RPG Game built with Phaser 3 + TypeScript",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "webpack serve --config webpack.dev.js",
+    "build": "webpack --config webpack.prod.js",
+    "prod": "npm run build && npx http-server dist",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write src/**/*.ts",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "phaser3",
+    "typescript",
+    "rpg",
+    "dragon-ball-z",
+    "game",
+    "web"
+  ],
+  "author": "Claude Code",
+  "license": "MIT",
+  "dependencies": {
+    "phaser": "^3.80.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "html-webpack-plugin": "^5.5.3",
+    "http-server": "^14.1.1",
+    "prettier": "^3.1.0",
+    "rimraf": "^5.0.5",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.2",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "webpack-merge": "^5.10.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

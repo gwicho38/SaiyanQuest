@@ -61,7 +61,20 @@
       "Bash(rustup:*)",
       "Bash(cargo --version)",
       "Bash(rustc --version)",
-      "Bash(~/.rustup/toolchains/nightly-aarch64-apple-darwin/bin/rustc --version)"
+      "Bash(~/.rustup/toolchains/nightly-aarch64-apple-darwin/bin/rustc --version)",
+      "Bash(RUSTC=\"/Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/rustc\" /Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/cargo install cargo-gba)",
+      "Bash(PATH=\"$HOME/.cargo/bin:$PATH\" make clean)",
+      "Bash(PATH=\"$HOME/.cargo/bin:$PATH\" RUSTC=\"/Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/rustc\" /Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/cargo gba build --release)",
+      "Bash(PATH=\"$HOME/.cargo/bin:$PATH\" cargo-gba --help)",
+      "Bash(RUSTC=\"/Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/rustc\" /Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/cargo install agb-gbafix)",
+      "Bash(RUSTC=\"/Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/rustc\" /Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/cargo install agb-gbafix --version 0.21.0)",
+      "Bash(PATH=\"$HOME/.cargo/bin:$PATH\" agb-gbafix --help)",
+      "Bash(PATH=\"$HOME/.cargo/bin:$PATH\" agb-gbafix target/thumbv4t-none-eabi/release/saiyan_quest -o target/thumbv4t-none-eabi/release/saiyan_quest.gba -t \"DBZ Saiyan Quest\" -p)",
+      "Bash(PATH=\"$HOME/.cargo/bin:$PATH\" agb-gbafix target/thumbv4t-none-eabi/release/saiyan_quest -o /tmp/test.gba -t \"DBZ Test\" -p -g)",
+      "Bash(readelf:*)",
+      "Bash(nm:*)",
+      "Bash(PATH=\"$HOME/.cargo/bin:$PATH\" RUSTC=\"/Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/rustc\" /Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/cargo build --release)",
+      "WebFetch(domain:www.reddit.com)"
     ],
     "deny": [],
     "ask": [],
@@ -70,7 +83,8 @@
       "/Users/lefv/.local",
       "/private/tmp/libgba",
       "/usr/bin",
-      "/Users/lefv/.cargo"
+      "/Users/lefv/.cargo",
+      "/private/tmp"
     ]
   }
 }
