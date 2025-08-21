@@ -1,247 +1,355 @@
-export interface TileData {
-    id: number;
-    type: 'grass' | 'stone' | 'water' | 'dirt' | 'wood' | 'wall';
-    collision: boolean;
-    depth: number; // For HD-2D layering
-}
+import * as PIXI from 'pixi.js';
+import { AssetLoader } from '../core/AssetLoader';
 
-export interface MapLayer {
-    name: string;
-    data: number[][];
-    depth: number;
-    parallax: { x: number; y: number };
+export type TileType = 'grass' | 'stone' | 'water' | 'empty';
+
+export interface TileData {
+    type: TileType;
+    passable: boolean;
+    sprite?: PIXI.Sprite;
 }
 
 export class TileMap {
-    private scene: Phaser.Scene;
-    private tileSize: number = 32;
+    private container: PIXI.Container;
+    private tiles: TileData[][] = [];
     private mapWidth: number;
     private mapHeight: number;
-    private layers: MapLayer[] = [];
-    private tileSprites: Phaser.GameObjects.Group;
+    private tileSize: number;
+    private assetLoader: AssetLoader;
 
-    constructor(scene: Phaser.Scene, width: number, height: number) {
-        this.scene = scene;
-        this.mapWidth = width;
-        this.mapHeight = height;
-        this.tileSprites = scene.add.group();
+    constructor(mapWidth: number, mapHeight: number, tileSize: number) {
+        this.mapWidth = mapWidth;
+        this.mapHeight = mapHeight;
+        this.tileSize = tileSize;
+        this.assetLoader = AssetLoader.getInstance();
+        
+        this.container = new PIXI.Container();
+        this.container.label = 'TileMap';
+        
+        this.initializeTiles();
     }
 
-    // Create an Octopath-style layered map
-    public generateOctopathStyleMap(): void {
-        // Background layer (furthest back)
-        const backgroundLayer: MapLayer = {
-            name: 'background',
-            data: this.generateTerrainLayer('grass'),
-            depth: 0,
-            parallax: { x: 0.1, y: 0.1 }
-        };
-
-        // Mid-ground layer (main gameplay area)
-        const midgroundLayer: MapLayer = {
-            name: 'midground',
-            data: this.generateMixedTerrain(),
-            depth: 1,
-            parallax: { x: 0.3, y: 0.3 }
-        };
-
-        // Foreground layer (objects and obstacles)
-        const foregroundLayer: MapLayer = {
-            name: 'foreground',
-            data: this.generateObstacles(),
-            depth: 2,
-            parallax: { x: 1, y: 1 }
-        };
-
-        this.layers = [backgroundLayer, midgroundLayer, foregroundLayer];
-        this.renderLayers();
-    }
-
-    private generateTerrainLayer(primaryType: string): number[][] {
-        const layer: number[][] = [];
+    private initializeTiles(): void {
+        this.tiles = [];
         
         for (let y = 0; y < this.mapHeight; y++) {
-            layer[y] = [];
+            this.tiles[y] = [];
             for (let x = 0; x < this.mapWidth; x++) {
-                // Create natural-looking terrain variation
-                const noise = this.simplexNoise(x * 0.1, y * 0.1);
-                
-                if (noise > 0.3) {
-                    layer[y][x] = 1; // Grass
-                } else if (noise > 0.1) {
-                    layer[y][x] = 2; // Dirt
-                } else {
-                    layer[y][x] = 3; // Stone
-                }
-            }
-        }
-        
-        return layer;
-    }
-
-    private generateMixedTerrain(): number[][] {
-        const layer: number[][] = [];
-        
-        for (let y = 0; y < this.mapHeight; y++) {
-            layer[y] = [];
-            for (let x = 0; x < this.mapWidth; x++) {
-                const noise = this.simplexNoise(x * 0.05, y * 0.05);
-                
-                if (noise > 0.4) {
-                    layer[y][x] = 4; // Water
-                } else if (noise > 0.2) {
-                    layer[y][x] = 5; // Wood
-                } else {
-                    layer[y][x] = 0; // Empty (transparent)
-                }
-            }
-        }
-        
-        return layer;
-    }
-
-    private generateObstacles(): number[][] {
-        const layer: number[][] = [];
-        
-        for (let y = 0; y < this.mapHeight; y++) {
-            layer[y] = [];
-            for (let x = 0; x < this.mapWidth; x++) {
-                const random = Math.random();
-                
-                if (random > 0.95) {
-                    layer[y][x] = 6; // Wall/Obstacle
-                } else {
-                    layer[y][x] = 0; // Empty
-                }
-            }
-        }
-        
-        return layer;
-    }
-
-    // Simple noise function for terrain generation
-    private simplexNoise(x: number, y: number): number {
-        return Math.sin(x * 2.5) * Math.cos(y * 2.5) * 0.3 +
-               Math.sin(x * 5) * Math.cos(y * 5) * 0.2 +
-               Math.random() * 0.1;
-    }
-
-    private renderLayers(): void {
-        this.layers.forEach(layer => {
-            this.renderLayer(layer);
-        });
-    }
-
-    private renderLayer(layer: MapLayer): void {
-        const layerGroup = this.scene.add.group();
-        
-        for (let y = 0; y < this.mapHeight; y++) {
-            for (let x = 0; x < this.mapWidth; x++) {
-                const tileId = layer.data[y][x];
-                if (tileId === 0) continue; // Skip empty tiles
-                
-                const tileSprite = this.createTileSprite(x, y, tileId);
-                if (tileSprite) {
-                    // Set depth for HD-2D layering
-                    tileSprite.setDepth(layer.depth);
-                    
-                    // Apply parallax scrolling
-                    tileSprite.setScrollFactor(layer.parallax.x, layer.parallax.y);
-                    
-                    layerGroup.add(tileSprite);
-                }
+                this.tiles[y][x] = {
+                    type: 'empty',
+                    passable: true
+                };
             }
         }
     }
 
-    private createTileSprite(x: number, y: number, tileId: number): Phaser.GameObjects.Sprite | null {
-        const tileKey = this.getTileKey(tileId);
-        if (!this.scene.textures.exists(tileKey)) {
-            return null;
+    public setTile(x: number, y: number, type: TileType): void {
+        if (x < 0 || x >= this.mapWidth || y < 0 || y >= this.mapHeight) {
+            return;
+        }
+
+        // Ensure the row exists
+        if (!this.tiles[y]) {
+            console.error(`TileMap row ${y} is undefined. Map dimensions: ${this.mapWidth}x${this.mapHeight}`);
+            return;
+        }
+
+        const tile = this.tiles[y][x];
+        if (!tile) {
+            console.error(`Tile at ${x},${y} is undefined`);
+            return;
         }
         
-        const worldX = x * this.tileSize + this.tileSize / 2;
-        const worldY = y * this.tileSize + this.tileSize / 2;
+        // Remove existing sprite if present
+        if (tile.sprite && tile.sprite.parent) {
+            tile.sprite.parent.removeChild(tile.sprite);
+            tile.sprite.destroy();
+        }
+
+        // Update tile data
+        tile.type = type;
+        tile.passable = this.getTilePassable(type);
+
+        // Create new sprite
+        const newSprite = this.createTileSprite(type);
+        tile.sprite = newSprite || undefined;
+        if (tile.sprite) {
+            tile.sprite.x = x * this.tileSize;
+            tile.sprite.y = y * this.tileSize;
+            this.container.addChild(tile.sprite);
+        }
+    }
+
+    private getTilePassable(type: TileType): boolean {
+        switch (type) {
+            case 'grass': return true;
+            case 'stone': return false;
+            case 'water': return false;
+            case 'empty': return true;
+            default: return true;
+        }
+    }
+
+    private createTileSprite(type: TileType): PIXI.Sprite | null {
+        let sprite: PIXI.Sprite | null = null;
         
-        const sprite = this.scene.add.sprite(worldX, worldY, tileKey);
-        sprite.setOrigin(0.5, 0.5);
+        // Try to get tile texture from loaded assets (fallback included)
+        const textureKey = `${type}_tile`;
+        const texture = this.assetLoader.getAsset(textureKey);
+        
+        if (texture) {
+            sprite = new PIXI.Sprite(texture);
+        }
+        
+        if (!sprite) {
+            // Create fallback sprite with colored graphics
+            const graphics = new PIXI.Graphics();
+            graphics.rect(0, 0, this.tileSize, this.tileSize);
+            
+            let color = 0x808080; // Default gray
+            switch (type) {
+                case 'grass':
+                    color = 0x228B22; // Forest green
+                    break;
+                case 'stone':
+                    color = 0x708090; // Slate gray
+                    break;
+                case 'water':
+                    color = 0x4169E1; // Royal blue
+                    break;
+                case 'empty':
+                    color = 0x654321; // Brown dirt
+                    break;
+            }
+            
+            graphics.fill({ color });
+            
+            // Add some texture variation
+            if (type === 'grass') {
+                // Add grass details
+                graphics.rect(4, 4, 4, 4);
+                graphics.fill({ color: 0x32CD32 });
+                graphics.rect(20, 8, 4, 4);
+                graphics.fill({ color: 0x32CD32 });
+                graphics.rect(12, 20, 4, 4);
+                graphics.fill({ color: 0x32CD32 });
+            } else if (type === 'stone') {
+                // Add stone details
+                graphics.rect(2, 2, 6, 6);
+                graphics.fill({ color: 0x2F4F4F });
+                graphics.rect(16, 12, 8, 8);
+                graphics.fill({ color: 0x2F4F4F });
+            } else if (type === 'water') {
+                // Add water shimmer
+                graphics.rect(8, 8, 2, 2);
+                graphics.fill({ color: 0x87CEEB });
+                graphics.rect(20, 16, 2, 2);
+                graphics.fill({ color: 0x87CEEB });
+            }
+            
+            // Create texture from graphics using canvas approach
+            const canvas = document.createElement('canvas');
+            canvas.width = this.tileSize;
+            canvas.height = this.tileSize;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+                ctx.fillRect(0, 0, this.tileSize, this.tileSize);
+            }
+            const tileTexture = PIXI.Texture.from(canvas);
+            
+            sprite = new PIXI.Sprite(tileTexture);
+            graphics.destroy();
+        }
+        
+        if (sprite) {
+            sprite.width = this.tileSize;
+            sprite.height = this.tileSize;
+        }
         
         return sprite;
     }
 
-    private getTileKey(tileId: number): string {
-        const tileTypes = [
-            'empty',
-            'grass_tile',
-            'dirt_tile', 
-            'stone_tile',
-            'water_tile',
-            'wood_tile',
-            'wall_tile'
-        ];
-        
-        return tileTypes[tileId] || 'grass_tile';
-    }
-
-    // Check collision at world position
-    public isCollisionAt(x: number, y: number): boolean {
-        const tileX = Math.floor(x / this.tileSize);
-        const tileY = Math.floor(y / this.tileSize);
-        
-        if (tileX < 0 || tileX >= this.mapWidth || tileY < 0 || tileY >= this.mapHeight) {
-            return true; // Out of bounds = collision
-        }
-        
-        // Check foreground layer for obstacles
-        const foregroundLayer = this.layers.find(layer => layer.name === 'foreground');
-        if (foregroundLayer) {
-            const tileId = foregroundLayer.data[tileY][tileX];
-            return tileId === 6; // Wall tile
-        }
-        
-        return false;
-    }
-
-    // Get tile info at position
-    public getTileAt(x: number, y: number): TileData | null {
-        const tileX = Math.floor(x / this.tileSize);
-        const tileY = Math.floor(y / this.tileSize);
-        
-        if (tileX < 0 || tileX >= this.mapWidth || tileY < 0 || tileY >= this.mapHeight) {
+    public getTile(x: number, y: number): TileData | null {
+        if (x < 0 || x >= this.mapWidth || y < 0 || y >= this.mapHeight) {
             return null;
         }
+        return this.tiles[y][x];
+    }
+
+    public getTileType(x: number, y: number): TileType {
+        const tile = this.getTile(x, y);
+        return tile ? tile.type : 'empty';
+    }
+
+    public isTilePassable(x: number, y: number): boolean {
+        const tile = this.getTile(x, y);
+        return tile ? tile.passable : false;
+    }
+
+    public isCollisionAt(worldX: number, worldY: number): boolean {
+        const tileX = Math.floor(worldX / this.tileSize);
+        const tileY = Math.floor(worldY / this.tileSize);
         
-        // Get top-most non-empty tile
-        for (let i = this.layers.length - 1; i >= 0; i--) {
-            const layer = this.layers[i];
-            const tileId = layer.data[tileY][tileX];
-            if (tileId > 0) {
-                return {
-                    id: tileId,
-                    type: this.getTileType(tileId),
-                    collision: tileId === 6,
-                    depth: layer.depth
-                };
+        return !this.isTilePassable(tileX, tileY);
+    }
+
+    public worldToTileCoords(worldX: number, worldY: number): { x: number; y: number } {
+        return {
+            x: Math.floor(worldX / this.tileSize),
+            y: Math.floor(worldY / this.tileSize)
+        };
+    }
+
+    public tileToWorldCoords(tileX: number, tileY: number): { x: number; y: number } {
+        return {
+            x: tileX * this.tileSize,
+            y: tileY * this.tileSize
+        };
+    }
+
+    public getMapDimensions(): { width: number; height: number; tileSize: number } {
+        return {
+            width: this.mapWidth,
+            height: this.mapHeight,
+            tileSize: this.tileSize
+        };
+    }
+
+    public getWorldDimensions(): { width: number; height: number } {
+        return {
+            width: this.mapWidth * this.tileSize,
+            height: this.mapHeight * this.tileSize
+        };
+    }
+
+    public generateRandomTerrain(): void {
+        console.log('Generating random terrain...');
+        
+        for (let y = 0; y < this.mapHeight; y++) {
+            for (let x = 0; x < this.mapWidth; x++) {
+                let tileType: TileType = 'grass';
+                
+                const random = Math.random();
+                const distanceFromCenter = Math.sqrt(
+                    Math.pow(x - this.mapWidth / 2, 2) + 
+                    Math.pow(y - this.mapHeight / 2, 2)
+                );
+                const normalizedDistance = distanceFromCenter / (Math.min(this.mapWidth, this.mapHeight) / 2);
+                
+                if (normalizedDistance > 0.8) {
+                    // Outer edges - more stone
+                    tileType = random < 0.7 ? 'stone' : 'grass';
+                } else if (random < 0.1) {
+                    tileType = 'water';
+                } else if (random < 0.2) {
+                    tileType = 'stone';
+                } else {
+                    tileType = 'grass';
+                }
+                
+                this.setTile(x, y, tileType);
             }
         }
         
-        return null;
+        console.log('Random terrain generation complete');
     }
 
-    private getTileType(tileId: number): 'grass' | 'stone' | 'water' | 'dirt' | 'wood' | 'wall' {
-        const types: ('grass' | 'stone' | 'water' | 'dirt' | 'wood' | 'wall')[] = [
-            'grass', 'grass', 'dirt', 'stone', 'water', 'wood', 'wall'
-        ];
-        return types[tileId] || 'grass';
-    }
-
-    // Update parallax effects
-    public updateParallax(cameraX: number, cameraY: number): void {
-        this.layers.forEach(layer => {
-            if (layer.parallax.x !== 1 || layer.parallax.y !== 1) {
-                // Update parallax positions
-                // This would be handled by Phaser's built-in scrollFactor
+    public createRiver(): void {
+        console.log('Creating river...');
+        
+        // Create a simple river from top to bottom
+        const riverX = Math.floor(this.mapWidth * 0.7);
+        const riverWidth = 3;
+        
+        for (let y = 0; y < this.mapHeight; y++) {
+            for (let x = riverX; x < riverX + riverWidth; x++) {
+                if (x >= 0 && x < this.mapWidth) {
+                    this.setTile(x, y, 'water');
+                }
             }
-        });
+        }
+        
+        console.log('River creation complete');
+    }
+
+    public createPath(): void {
+        console.log('Creating path...');
+        
+        // Create a winding path through the map
+        const pathWidth = 2;
+        let currentX = Math.floor(this.mapWidth * 0.1);
+        let currentY = Math.floor(this.mapHeight * 0.5);
+        
+        while (currentX < this.mapWidth - 5) {
+            // Create path section
+            for (let py = currentY - pathWidth; py <= currentY + pathWidth; py++) {
+                for (let px = currentX - pathWidth; px <= currentX + pathWidth; px++) {
+                    if (px >= 0 && px < this.mapWidth && py >= 0 && py < this.mapHeight) {
+                        this.setTile(px, py, 'grass');
+                    }
+                }
+            }
+            
+            // Move path forward with some randomness
+            currentX += 2 + Math.floor(Math.random() * 3);
+            currentY += Math.floor(Math.random() * 7) - 3; // -3 to 3
+            currentY = Math.max(5, Math.min(this.mapHeight - 5, currentY));
+        }
+        
+        console.log('Path creation complete');
+    }
+
+    public addRandomDetails(): void {
+        console.log('Adding random details...');
+        
+        const detailCount = Math.floor((this.mapWidth * this.mapHeight) * 0.05);
+        
+        for (let i = 0; i < detailCount; i++) {
+            const x = Math.floor(Math.random() * this.mapWidth);
+            const y = Math.floor(Math.random() * this.mapHeight);
+            
+            // Only add details to grass tiles
+            if (this.getTileType(x, y) === 'grass') {
+                // Random chance for stone or water features
+                if (Math.random() < 0.3) {
+                    this.setTile(x, y, 'stone');
+                } else if (Math.random() < 0.1) {
+                    this.setTile(x, y, 'water');
+                }
+            }
+        }
+        
+        console.log('Random details added');
+    }
+
+    public getContainer(): PIXI.Container {
+        return this.container;
+    }
+
+    public update(deltaTime: number): void {
+        // Tilemap doesn't need frame updates currently
+        // Could add animated tiles here in the future
+    }
+
+    public destroy(): void {
+        // Clean up all tile sprites
+        for (let y = 0; y < this.mapHeight; y++) {
+            for (let x = 0; x < this.mapWidth; x++) {
+                const tile = this.tiles[y][x];
+                if (tile.sprite) {
+                    tile.sprite.destroy();
+                }
+            }
+        }
+        
+        this.tiles = [];
+        
+        if (this.container.parent) {
+            this.container.parent.removeChild(this.container);
+        }
+        this.container.destroy({ children: true });
+        
+        console.log('TileMap destroyed');
     }
 }

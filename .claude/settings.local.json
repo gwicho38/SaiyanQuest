@@ -74,7 +74,8 @@
       "Bash(readelf:*)",
       "Bash(nm:*)",
       "Bash(PATH=\"$HOME/.cargo/bin:$PATH\" RUSTC=\"/Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/rustc\" /Users/lefv/.rustup/toolchains/nightly-2024-10-01-aarch64-apple-darwin/bin/cargo build --release)",
-      "WebFetch(domain:www.reddit.com)"
+      "WebFetch(domain:www.reddit.com)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": [],

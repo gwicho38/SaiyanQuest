@@ -1,51 +1,121 @@
 {
-  "name": "dragon-ball-z-legacy-of-goku",
+  "name": "dragon-ball-z-saiyan-quest",
+  "productName": "Dragon Ball Z: Saiyan Quest HD-2D",
   "version": "1.0.0",
-  "description": "Dragon Ball Z: Legacy of Goku - Web RPG Game built with Phaser 3 + TypeScript",
-  "main": "src/index.ts",
+  "description": "Dragon Ball Z: Saiyan Quest - HD-2D RPG Game built with PixiJS + TypeScript + Electron",
+  "main": "main.js",
   "scripts": {
-    "dev": "webpack serve --config webpack.dev.js",
-    "build": "webpack --config webpack.prod.js",
-    "prod": "npm run build && npx http-server dist",
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:electron\" --names \"📦WEBPACK,🚀ELECTRON\" --prefix-colors \"blue,magenta\" --kill-others",
+    "dev:web": "webpack serve --config webpack.config.js --mode development",
+    "dev:electron": "wait-on http://localhost:3001 && NODE_ENV=development electron .",
+    "build": "webpack --config webpack.config.js --mode production",
+    "build:electron": "npm run build && electron-builder",
+    "start": "electron .",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:all": "npm run build && electron-builder -mwl",
+    "postinstall": "electron-builder install-app-deps",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.ts",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist build"
   },
   "keywords": [
-    "phaser3",
+    "pixijs",
     "typescript",
+    "electron",
     "rpg",
     "dragon-ball-z",
     "game",
-    "web"
+    "hd-2d"
   ],
   "author": "Claude Code",
   "license": "MIT",
   "dependencies": {
-    "phaser": "^3.80.1"
+    "pixi.js": "^8.4.1",
+    "pixi-filters": "^6.0.0",
+    "@pixi/particle-emitter": "^5.0.8",
+    "howler": "^2.2.4"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@types/howler": "^2.2.11",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
+    "concurrently": "^9.2.0",
     "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "electron": "^32.2.0",
+    "electron-builder": "^25.1.8",
     "eslint": "^8.54.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
     "html-webpack-plugin": "^5.5.3",
-    "http-server": "^14.1.1",
     "prettier": "^3.1.0",
     "rimraf": "^5.0.5",
+    "style-loader": "^3.3.3",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.2",
+    "wait-on": "^8.0.4",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1",
-    "webpack-merge": "^5.10.0"
+    "webpack-dev-server": "^4.15.1"
   },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "build": {
+    "appId": "com.dragonballz.saiyianquest",
+    "productName": "Dragon Ball Z: Saiyan Quest HD-2D",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "main.js",
+      "preload.js",
+      "assets/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": ["**/*"]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.games",
+      "icon": "assets/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "Game"
+    }
   }
 }

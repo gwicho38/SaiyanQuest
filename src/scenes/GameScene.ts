@@ -1,190 +1,551 @@
+import * as PIXI from 'pixi.js';
+import { BaseScene } from './BaseScene';
+import { Game } from '../core/Game';
+import { AssetLoader } from '../core/AssetLoader';
 import { Player } from '../entities/Player';
-import { SpriteManager } from '../systems/SpriteManager';
 import { TileMap } from '../systems/TileMap';
-import { LightingSystem } from '../systems/LightingSystem';
+import { HD2DRenderer } from '../systems/HD2DRenderer';
 
-export class GameScene extends Phaser.Scene {
+export class GameScene extends BaseScene {
     private player!: Player;
-    private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-    private wasdKeys!: any;
-    private spriteManager!: SpriteManager;
     private tileMap!: TileMap;
-    private lightingSystem!: LightingSystem;
+    private hd2dRenderer!: HD2DRenderer;
+    private worldContainer!: PIXI.Container;
+    private backgroundContainer!: PIXI.Container;
+    private gameContainer!: PIXI.Container;
+    private uiContainer!: PIXI.Container;
+    private camera: { x: number; y: number; targetX: number; targetY: number } = {
+        x: 0, y: 0, targetX: 0, targetY: 0
+    };
 
-    constructor() {
-        super({ key: 'GameScene' });
+    // Game world settings
+    private readonly WORLD_WIDTH = 1600;
+    private readonly WORLD_HEIGHT = 1200;
+    private readonly TILE_SIZE = 32;
+
+    constructor(game: Game) {
+        super(game);
     }
 
-    create(): void {
-        // Initialize systems
-        this.spriteManager = new SpriteManager(this);
-        this.tileMap = new TileMap(this, 50, 38); // 1600x1200 world with 32px tiles
-        this.lightingSystem = new LightingSystem(this);
-
-        // Create HD-2D world
-        this.createHD2DWorld();
-
-        // Set up camera bounds for the larger world
-        this.physics.world.setBounds(0, 0, 1600, 1200);
-        this.cameras.main.setBounds(0, 0, 1600, 1200);
-
-        // Create player with HD-2D sprite
-        this.createPlayer();
-
-        // Set up camera to follow player with smooth movement
-        this.cameras.main.startFollow(this.player.sprite);
-        this.cameras.main.setLerp(0.08, 0.08); // Smoother camera movement
-        this.cameras.main.setDeadzone(100, 50); // Only move camera when player moves far enough
+    protected async onCreate(): Promise<void> {
+        console.log('Creating Dragon Ball Z game scene...');
         
-        // Add camera effects for HD-2D feel
-        this.cameras.main.setZoom(1.5); // Slight zoom for pixel art
-        this.cameras.main.roundPixels = true; // Keep pixel art crisp
-
-        // Input setup
-        this.cursors = this.input.keyboard!.createCursorKeys();
-        this.wasdKeys = this.input.keyboard!.addKeys('W,S,A,D,SPACE,SHIFT');
-
-        // Add HD-2D lighting and atmospheric effects
-        this.setupHD2DEffects();
+        this.setupContainers();
+        this.createWorld();
+        this.createPlayer();
+        this.setupCamera();
+        this.createUI();
+        
+        console.log('Dragon Ball Z game scene created successfully');
     }
 
-    private createHD2DWorld(): void {
-        // Generate Octopath-style layered map
-        this.tileMap.generateOctopathStyleMap();
+    private setupContainers(): void {
+        // Create layered containers for proper rendering order
+        this.backgroundContainer = new PIXI.Container();
+        this.backgroundContainer.label = 'Background';
+        this.backgroundContainer.zIndex = -1000;
 
-        // Add depth fog in the background for HD-2D depth effect
-        const depthGradient = this.add.graphics();
-        depthGradient.fillGradientStyle(0x2c3e50, 0x2c3e50, 0x34495e, 0x34495e, 0.3, 0.3, 0.1, 0.1);
-        depthGradient.fillRect(0, 0, 1600, 1200);
-        depthGradient.setDepth(-10);
-        depthGradient.setScrollFactor(0.05, 0.05); // Very slow parallax for depth
+        this.worldContainer = new PIXI.Container();
+        this.worldContainer.label = 'World';
+        this.worldContainer.zIndex = 0;
+
+        this.gameContainer = new PIXI.Container();
+        this.gameContainer.label = 'Game';
+        this.gameContainer.zIndex = 100;
+
+        this.uiContainer = new PIXI.Container();
+        this.uiContainer.label = 'UI';
+        this.uiContainer.zIndex = 1000;
+
+        this.container.addChild(this.backgroundContainer);
+        this.container.addChild(this.worldContainer);
+        this.container.addChild(this.gameContainer);
+        this.container.addChild(this.uiContainer);
+
+        // Enable sorting by zIndex
+        this.container.sortableChildren = true;
+    }
+
+    private createWorld(): void {
+        // Initialize HD-2D renderer
+        this.hd2dRenderer = new HD2DRenderer(this.game.getApp());
+        
+        // Create tilemap
+        const tilesWidth = Math.floor(this.WORLD_WIDTH / this.TILE_SIZE);
+        const tilesHeight = Math.floor(this.WORLD_HEIGHT / this.TILE_SIZE);
+        
+        console.log(`Creating TileMap: ${tilesWidth}x${tilesHeight} tiles`);
+        
+        this.tileMap = new TileMap(tilesWidth, tilesHeight, this.TILE_SIZE);
+        
+        // Generate the world
+        this.generateDBZWorld();
+        
+        // Add world elements to containers
+        this.worldContainer.addChild(this.tileMap.getContainer());
+    }
+
+    private generateDBZWorld(): void {
+        const mapWidth = Math.floor(this.WORLD_WIDTH / this.TILE_SIZE);
+        const mapHeight = Math.floor(this.WORLD_HEIGHT / this.TILE_SIZE);
+        
+        console.log(`Generating world: ${mapWidth}x${mapHeight} tiles (${this.WORLD_WIDTH}x${this.WORLD_HEIGHT} pixels)`);
+        
+        // Create base terrain
+        for (let y = 0; y < mapHeight; y++) {
+            for (let x = 0; x < mapWidth; x++) {
+                let tileType = 'grass';
+                
+                // Create varied terrain
+                const centerX = Math.floor(mapWidth / 2);
+                const centerY = Math.floor(mapHeight / 2);
+                const distanceFromCenter = Math.sqrt(
+                    Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2)
+                );
+                
+                // Different terrain based on distance from center
+                if (distanceFromCenter > mapWidth * 0.4) {
+                    tileType = 'stone'; // Mountains/rocky areas at edges
+                } else if (Math.random() < 0.1) {
+                    tileType = 'water'; // Random water patches
+                } else if (Math.random() < 0.3) {
+                    tileType = 'stone'; // Random stone patches
+                }
+                
+                this.tileMap.setTile(x, y, tileType as any);
+            }
+        }
+        
+        // Add special areas
+        this.createTrainingGrounds();
+        this.createKameHouse();
+        this.createCapsuleCorp();
+    }
+
+    private createTrainingGrounds(): void {
+        // Create a clearing for training
+        const centerX = Math.floor(this.WORLD_WIDTH / this.TILE_SIZE / 2);
+        const centerY = Math.floor(this.WORLD_HEIGHT / this.TILE_SIZE / 2);
+        const radius = 8;
+        
+        for (let y = centerY - radius; y <= centerY + radius; y++) {
+            for (let x = centerX - radius; x <= centerX + radius; x++) {
+                const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+                if (distance <= radius) {
+                    this.tileMap.setTile(x, y, 'grass');
+                }
+            }
+        }
+        
+        console.log(`Created training grounds at (${centerX}, ${centerY})`);
+    }
+
+    private createKameHouse(): void {
+        // Small house area
+        const houseX = 10;
+        const houseY = 10;
+        
+        for (let y = houseY; y < houseY + 4; y++) {
+            for (let x = houseX; x < houseX + 4; x++) {
+                this.tileMap.setTile(x, y, 'stone');
+            }
+        }
+        
+        console.log(`Created Kame House at (${houseX}, ${houseY})`);
+    }
+
+    private createCapsuleCorp(): void {
+        // Larger building area
+        const corpX = Math.floor(this.WORLD_WIDTH / this.TILE_SIZE) - 15;
+        const corpY = Math.floor(this.WORLD_HEIGHT / this.TILE_SIZE) - 15;
+        
+        for (let y = corpY; y < corpY + 8; y++) {
+            for (let x = corpX; x < corpX + 8; x++) {
+                this.tileMap.setTile(x, y, 'stone');
+            }
+        }
+        
+        console.log(`Created Capsule Corp at (${corpX}, ${corpY})`);
     }
 
     private createPlayer(): void {
-        // Create player with the HD-2D Goku sprite
-        this.player = new Player(this, 800, 600); // Center of world
-        this.player.setSprite('goku');
+        // Create player at the center of the world
+        const startX = this.WORLD_WIDTH / 2;
+        const startY = this.WORLD_HEIGHT / 2;
         
-        // Set player depth above tiles but below UI
-        this.player.sprite.setDepth(10);
+        this.player = new Player(startX, startY);
+        this.gameContainer.addChild(this.player.getSprite());
+        
+        console.log(`Created player at (${startX}, ${startY})`);
     }
 
-    private setupHD2DEffects(): void {
-        // Setup depth layers for HD-2D effect
-        this.lightingSystem.setupDepthLayers();
+    private setupCamera(): void {
+        // Initialize camera to follow player
+        this.camera.x = this.player.getX() - this.game.getApp().screen.width / 2;
+        this.camera.y = this.player.getY() - this.game.getApp().screen.height / 2;
+        this.camera.targetX = this.camera.x;
+        this.camera.targetY = this.camera.y;
         
-        // Create depth of field effect
-        this.lightingSystem.createDepthOfField();
+        this.updateCameraPosition();
+    }
+
+    private updateCameraPosition(): void {
+        // Smooth camera following
+        const lerp = 0.1;
+        this.camera.x += (this.camera.targetX - this.camera.x) * lerp;
+        this.camera.y += (this.camera.targetY - this.camera.y) * lerp;
         
-        // Add atmospheric particles
-        this.lightingSystem.createAtmosphericEffects();
+        // Clamp camera to world bounds
+        const app = this.game.getApp();
+        this.camera.x = Math.max(0, Math.min(this.WORLD_WIDTH - app.screen.width, this.camera.x));
+        this.camera.y = Math.max(0, Math.min(this.WORLD_HEIGHT - app.screen.height, this.camera.y));
         
-        // Add some static light sources around the world
-        this.lightingSystem.addLightSource({
-            x: 200, y: 200, radius: 150, intensity: 0.6, color: 0xffddaa, type: 'static'
+        // Apply camera transform to world containers
+        this.worldContainer.x = -this.camera.x;
+        this.worldContainer.y = -this.camera.y;
+        this.gameContainer.x = -this.camera.x;
+        this.gameContainer.y = -this.camera.y;
+    }
+
+    private createUI(): void {
+        // Create health and ki bars
+        this.createHealthBar();
+        this.createKiBar();
+        this.createCharacterInfo();
+        this.createControlsHint();
+    }
+
+    private createHealthBar(): void {
+        const padding = 20;
+        
+        // Health bar background
+        const healthBg = new PIXI.Graphics();
+        healthBg.rect(0, 0, 204, 24);
+        healthBg.fill(0x000000, 0.7);
+        healthBg.x = padding;
+        healthBg.y = padding;
+        this.uiContainer.addChild(healthBg);
+        
+        // Health bar fill
+        const healthFill = new PIXI.Graphics();
+        healthFill.rect(0, 0, 200, 20);
+        healthFill.fill(0xff0000);
+        healthFill.x = padding + 2;
+        healthFill.y = padding + 2;
+        this.uiContainer.addChild(healthFill);
+        
+        // Health bar label
+        const healthLabel = this.createText('HP', {
+            fontSize: 16,
+            fill: 0xffffff,
+            fontWeight: 'bold'
         });
+        healthLabel.x = padding + 210;
+        healthLabel.y = padding + 4;
+        this.uiContainer.addChild(healthLabel);
+    }
+
+    private createKiBar(): void {
+        const padding = 20;
+        const yOffset = 50;
         
-        this.lightingSystem.addLightSource({
-            x: 1400, y: 800, radius: 120, intensity: 0.5, color: 0xaaddff, type: 'dynamic'
+        // Ki bar background
+        const kiBg = new PIXI.Graphics();
+        kiBg.rect(0, 0, 204, 24);
+        kiBg.fill(0x000000, 0.7);
+        kiBg.x = padding;
+        kiBg.y = padding + yOffset;
+        this.uiContainer.addChild(kiBg);
+        
+        // Ki bar fill
+        const kiFill = new PIXI.Graphics();
+        kiFill.rect(0, 0, 200, 20);
+        kiFill.fill(0x00ffff);
+        kiFill.x = padding + 2;
+        kiFill.y = padding + yOffset + 2;
+        this.uiContainer.addChild(kiFill);
+        
+        // Ki bar label
+        const kiLabel = this.createText('KI', {
+            fontSize: 16,
+            fill: 0xffffff,
+            fontWeight: 'bold'
         });
-        
-        // Set ambient lighting for outdoor scene
-        this.lightingSystem.setAmbientLightLevel(0.6);
+        kiLabel.x = padding + 210;
+        kiLabel.y = padding + yOffset + 4;
+        this.uiContainer.addChild(kiLabel);
     }
 
-    update(): void {
-        // Handle input with HD-2D character movement
-        let velocityX = 0;
-        let velocityY = 0;
-        let isRunning = this.wasdKeys.SHIFT.isDown;
+    private createCharacterInfo(): void {
+        const app = this.game.getApp();
         
-        const speed = isRunning ? 300 : 180; // Walking/running speeds
-
-        // Movement input
-        if (this.cursors.left.isDown || this.wasdKeys.A.isDown) {
-            velocityX = -speed;
-            this.player.setDirection('left');
-        } else if (this.cursors.right.isDown || this.wasdKeys.D.isDown) {
-            velocityX = speed;
-            this.player.setDirection('right');
-        }
-
-        if (this.cursors.up.isDown || this.wasdKeys.W.isDown) {
-            velocityY = -speed;
-            this.player.setDirection('up');
-        } else if (this.cursors.down.isDown || this.wasdKeys.S.isDown) {
-            velocityY = speed;
-            this.player.setDirection('down');
-        }
-
-        // Diagonal movement normalization
-        if (velocityX !== 0 && velocityY !== 0) {
-            velocityX *= 0.707; // Normalize diagonal movement
-            velocityY *= 0.707;
-        }
-
-        // Check collision with tilemap
-        const nextX = this.player.sprite.x + (velocityX * 0.016); // Predict next position
-        const nextY = this.player.sprite.y + (velocityY * 0.016);
+        // Character name and level
+        const characterInfo = this.createText('GOKU - Level 1', {
+            fontSize: 18,
+            fill: 0xffd700,
+            fontWeight: 'bold',
+            stroke: { color: 0x000000, width: 2 }
+        });
+        characterInfo.x = app.screen.width - 200;
+        characterInfo.y = 20;
+        this.uiContainer.addChild(characterInfo);
         
-        if (this.tileMap.isCollisionAt(nextX, this.player.sprite.y)) {
-            velocityX = 0;
-        }
-        if (this.tileMap.isCollisionAt(this.player.sprite.x, nextY)) {
-            velocityY = 0;
-        }
-
-        // Apply movement
-        this.player.move(velocityX, velocityY);
-
-        // Handle attack with energy effects
-        if (Phaser.Input.Keyboard.JustDown(this.wasdKeys.SPACE)) {
-            this.player.attack();
-            this.createEnergyAttackEffect();
-        }
-
-        // Update HD-2D systems
-        this.tileMap.updateParallax(this.cameras.main.scrollX, this.cameras.main.scrollY);
-        this.lightingSystem.update(this.player.sprite.x, this.player.sprite.y);
+        // Power level
+        const powerLevel = this.createText('Power Level: 1,000', {
+            fontSize: 14,
+            fill: 0xffffff,
+            stroke: { color: 0x000000, width: 1 }
+        });
+        powerLevel.x = app.screen.width - 200;
+        powerLevel.y = 45;
+        this.uiContainer.addChild(powerLevel);
     }
 
-    private createEnergyAttackEffect(): void {
-        const direction = this.player.getDirection();
-        let offsetX = 0;
-        let offsetY = 0;
+    private createControlsHint(): void {
+        const app = this.game.getApp();
         
-        // Calculate attack direction
-        switch (direction) {
-            case 'up': offsetY = -50; break;
-            case 'down': offsetY = 50; break;
-            case 'left': offsetX = -50; break;
-            case 'right': offsetX = 50; break;
-        }
-
-        // Create energy blast effect
-        const blast = this.add.sprite(
-            this.player.sprite.x + offsetX,
-            this.player.sprite.y + offsetY,
-            'energy_blast'
+        const controls = this.createText(
+            'WASD: Move | Space: Attack | Z: Ki Blast | X: Special | Q/E: Transform',
+            {
+                fontSize: 12,
+                fill: 0xcccccc,
+                stroke: { color: 0x000000, width: 1 }
+            }
         );
+        controls.x = app.screen.width / 2;
+        controls.y = app.screen.height - 30;
+        controls.anchor.set(0.5);
+        this.uiContainer.addChild(controls);
+    }
+
+    protected onUpdate(deltaTime: number): void {
+        // Update player
+        this.updatePlayer(deltaTime);
         
-        blast.setScale(1.5);
-        blast.setDepth(12);
-        blast.setAlpha(0.9);
+        // Update camera
+        this.updateCameraFollow();
+        this.updateCameraPosition();
+        
+        // Update HD-2D effects
+        this.hd2dRenderer.update(deltaTime);
+        
+        // Handle input
+        this.handleInput();
+    }
 
-        // Animate the energy blast
-        this.tweens.add({
-            targets: blast,
-            scaleX: 0.5,
-            scaleY: 0.5,
-            alpha: 0,
-            duration: 300,
-            ease: 'Power2',
-            onComplete: () => blast.destroy()
+    private updatePlayer(deltaTime: number): void {
+        this.player.update(deltaTime);
+        
+        // Check tile collisions
+        const playerTileX = Math.floor(this.player.getX() / this.TILE_SIZE);
+        const playerTileY = Math.floor(this.player.getY() / this.TILE_SIZE);
+        
+        // Simple collision detection with world bounds
+        const newX = Math.max(16, Math.min(this.WORLD_WIDTH - 16, this.player.getX()));
+        const newY = Math.max(16, Math.min(this.WORLD_HEIGHT - 16, this.player.getY()));
+        
+        this.player.setPosition(newX, newY);
+    }
+
+    private updateCameraFollow(): void {
+        // Update camera target to follow player
+        this.camera.targetX = this.player.getX() - this.game.getApp().screen.width / 2;
+        this.camera.targetY = this.player.getY() - this.game.getApp().screen.height / 2;
+    }
+
+    private handleInput(): void {
+        const input = this.game.getInputManager();
+        
+        // Movement
+        const movement = input.getMovementVector();
+        const isRunning = input.isRunning();
+        
+        if (movement.x !== 0 || movement.y !== 0) {
+            this.player.move(movement.x, movement.y, isRunning);
+        } else {
+            this.player.stop();
+        }
+        
+        // Combat
+        if (input.isAttacking()) {
+            this.player.attack();
+            this.createAttackEffect();
+        }
+        
+        if (input.isKiAttacking()) {
+            this.player.kiAttack();
+            this.createKiBlastEffect();
+        }
+        
+        if (input.isSpecialAttacking()) {
+            this.player.specialAttack();
+            this.createSpecialAttackEffect();
+        }
+        
+        // Transformations
+        if (input.isTransformNext()) {
+            this.player.transformNext();
+        }
+        
+        if (input.isTransformPrev()) {
+            this.player.transformPrevious();
+        }
+        
+        // Menu
+        if (input.isMenuPressed()) {
+            this.pauseGame();
+        }
+    }
+
+    private createAttackEffect(): void {
+        const playerX = this.player.getX();
+        const playerY = this.player.getY();
+        
+        // Create punch effect
+        const effect = new PIXI.Graphics();
+        effect.circle(0, 0, 20);
+        effect.fill(0xffff00, 0.7);
+        effect.x = playerX;
+        effect.y = playerY;
+        this.gameContainer.addChild(effect);
+        
+        // Animate effect
+        this.tween(effect, { alpha: 0 }, 300).then(() => {
+            effect.destroy();
         });
+        
+        this.game.getAudioManager().playSfx('punch');
+    }
 
-        // Add screen shake for impact
-        this.cameras.main.shake(100, 0.01);
+    private createKiBlastEffect(): void {
+        const playerX = this.player.getX();
+        const playerY = this.player.getY();
+        
+        // Create ki blast
+        const kiBlast = new PIXI.Graphics();
+        kiBlast.circle(0, 0, 15);
+        kiBlast.fill(0x00ffff);
+        kiBlast.x = playerX;
+        kiBlast.y = playerY;
+        this.gameContainer.addChild(kiBlast);
+        
+        // Move ki blast forward
+        const direction = this.player.getDirection();
+        let targetX = playerX;
+        let targetY = playerY;
+        
+        switch (direction) {
+            case 'up': targetY -= 200; break;
+            case 'down': targetY += 200; break;
+            case 'left': targetX -= 200; break;
+            case 'right': targetX += 200; break;
+        }
+        
+        // Animate ki blast
+        Promise.all([
+            this.tween(kiBlast, { x: targetX, y: targetY }, 800),
+            this.tween(kiBlast, { alpha: 0 }, 800)
+        ]).then(() => {
+            kiBlast.destroy();
+        });
+        
+        this.game.getAudioManager().playSfx('ki_blast');
+    }
+
+    private createSpecialAttackEffect(): void {
+        const playerX = this.player.getX();
+        const playerY = this.player.getY();
+        
+        // Create Kamehameha effect
+        const wave = new PIXI.Graphics();
+        wave.rect(-100, -20, 200, 40);
+        wave.fill(0x0088ff);
+        wave.x = playerX;
+        wave.y = playerY;
+        this.gameContainer.addChild(wave);
+        
+        // Animate wave
+        Promise.all([
+            this.tween(wave, { scaleX: 3, scaleY: 2 }, 1000),
+            this.tween(wave, { alpha: 0 }, 1000)
+        ]).then(() => {
+            wave.destroy();
+        });
+        
+        this.game.getAudioManager().playSfx('kamehameha');
+    }
+
+    private pauseGame(): void {
+        console.log('Pausing game...');
+        // TODO: Implement pause menu
+    }
+
+    protected async onSceneEnter(): Promise<void> {
+        console.log('Entering Dragon Ball Z game world...');
+        
+        // Start game music
+        this.game.getAudioManager().playMusic('overworld_theme', true);
+        
+        // Create new save data if starting new game
+        const saveManager = this.game.getSaveManager();
+        if (!saveManager.hasSaveData()) {
+            const newSave = saveManager.createNewSave();
+            saveManager.saveGame(newSave);
+        }
+        
+        // Fade in
+        this.container.alpha = 0;
+        await this.fadeIn(this.container, 1000);
+    }
+
+    protected onSceneExit(): void {
+        console.log('Exiting Dragon Ball Z game world...');
+        
+        // Stop game music
+        this.game.getAudioManager().stopMusic(true);
+        
+        // Save game state
+        this.saveGameState();
+    }
+
+    private saveGameState(): void {
+        const saveManager = this.game.getSaveManager();
+        const currentSave = saveManager.getCurrentSave();
+        
+        if (currentSave) {
+            // Update player position
+            currentSave.playerData.position.x = this.player.getX();
+            currentSave.playerData.position.y = this.player.getY();
+            
+            // Update play time
+            saveManager.updatePlayTime(0.016); // One frame of time
+            
+            // Save to storage
+            saveManager.saveGame(currentSave);
+        }
+    }
+
+    protected onResize(width: number, height: number): void {
+        // Update UI positions
+        const characterInfo = this.uiContainer.children.find(child => 
+            child instanceof PIXI.Text && child.text.includes('GOKU')
+        ) as PIXI.Text;
+        
+        if (characterInfo) {
+            characterInfo.x = width - 200;
+        }
+        
+        const controls = this.uiContainer.children.find(child => 
+            child instanceof PIXI.Text && child.text.includes('WASD')
+        ) as PIXI.Text;
+        
+        if (controls) {
+            controls.x = width / 2;
+            controls.y = height - 30;
+        }
+        
+        // Update camera bounds
+        this.updateCameraPosition();
     }
 
     public getPlayer(): Player {

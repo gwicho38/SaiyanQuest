@@ -1,0 +1,121 @@
+/* Dragon Ball Z: Saiyan Quest Global Styles */
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-app-region: no-drag;
+}
+
+/* Game container */
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* PixiJS canvas styling */
+canvas {
+    display: block;
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(255, 107, 0, 0.3);
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+/* Prevent image dragging */
+img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+}
+
+/* Loading screen styles (defined in HTML but can be overridden here) */
+.loading-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+}
+
+/* Game UI overlays */
+.ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.ui-element {
+    pointer-events: auto;
+}
+
+/* Performance optimization */
+.gpu-accelerated {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    #game-container {
+        padding: 10px;
+    }
+    
+    canvas {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto !important;
+        height: auto !important;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    canvas {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: -webkit-crisp-edges;
+        image-rendering: pixelated;
+    }
+}
+
+/* Focus styles for accessibility */
+button:focus,
+input:focus {
+    outline: 2px solid #ff6b00;
+    outline-offset: 2px;
+}
+
+/* Hide browser scrollbars */
+::-webkit-scrollbar {
+    display: none;
+}
+
+html {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

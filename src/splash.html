@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a0033 0%, #330066 50%, #4d0099 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .splash-container {
+            text-align: center;
+            z-index: 10;
+        }
+
+        .logo {
+            width: 300px;
+            height: 150px;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 36px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .title {
+            color: #FFD700;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5),
+                         0 0 20px rgba(255, 215, 0, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: #FFA500;
+            font-size: 18px;
+            margin-bottom: 40px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            letter-spacing: 4px;
+        }
+
+        .loading-bar {
+            width: 300px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700);
+            background-size: 200% 100%;
+            border-radius: 3px;
+            animation: loading 1.5s ease-in-out infinite, shimmer 2s linear infinite;
+        }
+
+        .loading-text {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            margin-top: 20px;
+            letter-spacing: 1px;
+        }
+
+        @keyframes loading {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .energy-orbs {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.8), transparent);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .orb:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .orb:nth-child(2) {
+            width: 60px;
+            height: 60px;
+            right: 15%;
+            animation-delay: 1s;
+        }
+
+        .orb:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            left: 70%;
+            animation-delay: 2s;
+        }
+
+        .orb:nth-child(4) {
+            width: 40px;
+            height: 40px;
+            right: 30%;
+            animation-delay: 3s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateY(-50vh) scale(1);
+                opacity: 0.8;
+            }
+            90% {
+                opacity: 0.4;
+            }
+        }
+
+        .dragon-balls {
+            position: absolute;
+            bottom: 20px;
+            display: flex;
+            gap: 10px;
+            opacity: 0.6;
+        }
+
+        .dragon-ball {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #FFA500, #FF6347);
+            box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #8B0000;
+            font-weight: bold;
+            animation: rotate 3s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="energy-orbs">
+        <div class="orb"></div>
+        <div class="orb"></div>
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+
+    <div class="splash-container">
+        <div class="logo">DBZ</div>
+        <div class="title">SAIYAN QUEST</div>
+        <div class="subtitle">HD-2D EDITION</div>
+        
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+        
+        <div class="loading-text">POWERING UP...</div>
+        
+        <div class="dragon-balls">
+            <div class="dragon-ball">★</div>
+            <div class="dragon-ball">★★</div>
+            <div class="dragon-ball">★★★</div>
+            <div class="dragon-ball">★★★★</div>
+            <div class="dragon-ball">★★★★★</div>
+            <div class="dragon-ball">★★★★★★</div>
+            <div class="dragon-ball">★★★★★★★</div>
+        </div>
+    </div>
+</body>
+</html>

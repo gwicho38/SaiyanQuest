@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' data: ws: wss:; font-src 'self'; worker-src 'self' blob:;">
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+        }
+        
+        #loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ff6b00 0%, #ff8f00 50%, #ffa726 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        .loading-logo {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            margin-bottom: 2rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .loading-bar {
+            width: 300px;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #fff 0%, #ffeb3b 100%);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: shimmer 2s ease-in-out infinite;
+        }
+        
+        .loading-text {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            animation: fadeInOut 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+        
+        @keyframes shimmer {
+            0% { box-shadow: 0 0 5px rgba(255,255,255,0.5); }
+            50% { box-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 30px rgba(255,235,59,0.6); }
+            100% { box-shadow: 0 0 5px rgba(255,255,255,0.5); }
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        #game-canvas {
+            display: block;
+            border: 2px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(255,107,0,0.3);
+        }
+        
+        .version-info {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            color: #ccc;
+        }
+        
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .controls-hint.show {
+            opacity: 1;
+        }
+        
+        /* Responsive design for smaller screens */
+        @media (max-width: 768px) {
+            .loading-logo {
+                font-size: 2rem;
+            }
+            
+            .loading-bar {
+                width: 250px;
+            }
+            
+            #game-canvas {
+                border: 1px solid #333;
+            }
+        }
+        
+        /* Hide scrollbars */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        
+        html {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="loading-screen">
+            <div class="loading-logo">DRAGON BALL Z</div>
+            <div class="loading-logo" style="font-size: 2rem; margin-top: -1rem; margin-bottom: 2rem;">SAIYAN QUEST</div>
+            <div class="loading-bar">
+                <div class="loading-progress" id="loading-progress"></div>
+            </div>
+            <div class="loading-text" id="loading-text">Initializing HD-2D Engine...</div>
+        </div>
+        
+        <canvas id="game-canvas"></canvas>
+        
+        <div class="controls-hint" id="controls-hint">
+            WASD/Arrow Keys: Move | Space: Attack | Q/E: Transform | Z/X: Ki Attacks
+        </div>
+        
+        <div class="version-info">
+            Dragon Ball Z: Saiyan Quest HD-2D v1.0.0
+        </div>
+    </div>
+    
+    <script>
+        // Show controls hint after game loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const hint = document.getElementById('controls-hint');
+                if (hint) {
+                    hint.classList.add('show');
+                    setTimeout(() => {
+                        hint.classList.remove('show');
+                    }, 5000);
+                }
+            }, 2000);
+        });
+        
+        // Prevent context menu
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        // Prevent drag and drop
+        document.addEventListener('dragover', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => e.preventDefault());
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Prevent F5 refresh
+            if (e.key === 'F5') {
+                e.preventDefault();
+            }
+            
+            // Prevent Ctrl+R refresh
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+            }
+            
+            // Toggle fullscreen with F11
+            if (e.key === 'F11') {
+                e.preventDefault();
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                } else {
+                    document.documentElement.requestFullscreen();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
