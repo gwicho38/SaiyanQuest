@@ -93,7 +93,8 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         { from: 'assets', to: 'assets' },
-        { from: 'src/splash.html', to: 'splash.html' }
+        { from: 'src/splash.html', to: 'splash.html' },
+        { from: 'resources', to: 'assets/resources', noErrorOnMissing: true }
       ]
     })
   ],

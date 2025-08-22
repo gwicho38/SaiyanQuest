@@ -7,16 +7,18 @@ A complete Dragon Ball Z: Legacy of Goku-style top-down action RPG for the Game 
 ### Prerequisites
 
 1. **Install Rust via rustup** (not Homebrew):
+
    ```bash
    # If you have Homebrew Rust, remove it first
    brew uninstall rust
-   
+
    # Install rustup
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
    source ~/.cargo/env
    ```
 
 2. **Set up nightly toolchain**:
+
    ```bash
    rustup toolchain install nightly
    rustup default nightly
@@ -48,7 +50,7 @@ make play
 
 ```bash
 make check    # Quick syntax check
-make clippy   # Code quality checks  
+make clippy   # Code quality checks
 make fmt      # Format code
 make clean    # Clean build files
 make info     # Show build information
@@ -57,6 +59,7 @@ make info     # Show build information
 ## 🎮 Game Features
 
 ### Migrated from C Implementation
+
 - **Player Character System**: Complete RPG stats, movement, and progression
 - **Combat System**: Melee attacks, energy/Ki attacks, combo system
 - **RPG Mechanics**: Experience points, leveling, stat progression
@@ -64,6 +67,7 @@ make info     # Show build information
 - **Transformation System**: Super Saiyan forms
 
 ### Core Systems
+
 - **Real-time Combat**: Melee and energy-based attacks
 - **8-directional Movement**: Smooth character control
 - **Level Progression**: Experience-based character growth
@@ -73,6 +77,7 @@ make info     # Show build information
 ## 🏗️ Architecture
 
 ### Project Structure
+
 ```
 src/
 ├── main.rs              # Entry point
@@ -95,24 +100,28 @@ src/
 ### Key Components
 
 #### Player Character (`src/game/player.rs`)
+
 - Fixed-point position system for smooth movement
 - RPG stats: HP, Ki, Attack, Defense, Speed
 - 8-directional movement with animation
 - Transformation levels and abilities
 
 #### Combat System (`src/game/combat.rs`)
+
 - Hitbox-based collision detection
 - Combo system with timing windows
 - Energy attacks (Kamehameha, Energy Blast, Solar Flare)
 - Damage calculation with defense
 
 #### RPG System (`src/game/rpg.rs`)
+
 - Experience curve: `level² × 100`
 - Automatic stat growth on level up
 - Ability unlocking at specific levels
 - Transformation system
 
 #### Quest Management (`src/game/quest.rs`)
+
 - DBZ story progression (Raditz, Snake Way, Nappa, etc.)
 - Quest status tracking and completion
 - Experience and item rewards
@@ -121,17 +130,20 @@ src/
 ## 🔧 Technical Details
 
 ### Framework
+
 - **AGB**: Modern Rust framework for GBA development
 - **Fixed-point Math**: Smooth movement and positioning
 - **No-std Environment**: Embedded Rust for GBA hardware
 
 ### Memory Layout
+
 - **IWRAM**: Game state and critical data
 - **EWRAM**: Level data, enemies, dialogue
 - **VRAM**: Graphics and sprites
 - **OAM**: Sprite management
 
 ### Display System
+
 - **Mode 0**: Tiled background mode
 - **4 Background Layers**: UI, tilemap, parallax, effects
 - **128 Sprites**: Players, enemies, projectiles, items
@@ -139,6 +151,7 @@ src/
 ## 🎯 Migration Status
 
 ✅ **Completed Migration from C**
+
 - All C game systems converted to Rust
 - Player movement and input handling
 - RPG progression and leveling
@@ -147,6 +160,7 @@ src/
 - Build system updated for Rust-only development
 
 ### Differences from Original C Implementation
+
 - **Type Safety**: Rust's type system prevents many runtime errors
 - **Memory Safety**: No manual memory management
 - **Modern Tooling**: Cargo build system and crate ecosystem
@@ -173,6 +187,7 @@ src/
    - Implement spawn system in level manager
 
 ### Performance Considerations
+
 - Use fixed-point math for smooth animation
 - Batch sprite updates during VBlank
 - Efficient collision detection with spatial partitioning

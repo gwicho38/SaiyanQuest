@@ -20,6 +20,7 @@ export interface GameProgress {
     unlockedCharacters: string[];
     playTime: number;
     lastSaved: number;
+    activeQuests?: Record<string, { step: string }>; // questId -> step id
 }
 
 export interface GameSettings {
@@ -94,7 +95,8 @@ export class SaveManager {
                 completedQuests: [],
                 unlockedCharacters: ['goku'],
                 playTime: 0,
-                lastSaved: Date.now()
+                lastSaved: Date.now(),
+                activeQuests: {}
             },
             settings: {
                 volume: 0.7,
@@ -175,6 +177,9 @@ export class SaveManager {
                     savedData = this.migrateSaveData(savedData);
                 }
 
+                // Ensure new fields exist
+                savedData.progress.activeQuests = savedData.progress.activeQuests || {};
+
                 this.currentSave = savedData;
                 console.log('Save data loaded successfully');
                 return savedData;
@@ -202,6 +207,7 @@ export class SaveManager {
             }
             if (oldSave.progress) {
                 Object.assign(newSave.progress, oldSave.progress);
+                newSave.progress.activeQuests = oldSave.progress.activeQuests || {};
             }
             if (oldSave.settings) {
                 Object.assign(newSave.settings, oldSave.settings);

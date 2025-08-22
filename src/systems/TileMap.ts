@@ -9,6 +9,16 @@ export interface TileData {
     sprite?: PIXI.Sprite;
 }
 
+export interface MapObject {
+    name: string;
+    type: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    props?: { [key: string]: any };
+}
+
 export class TileMap {
     private container: PIXI.Container;
     private tiles: TileData[][] = [];
@@ -16,6 +26,7 @@ export class TileMap {
     private mapHeight: number;
     private tileSize: number;
     private assetLoader: AssetLoader;
+    private objects: MapObject[] = [];
 
     constructor(mapWidth: number, mapHeight: number, tileSize: number) {
         this.mapWidth = mapWidth;
@@ -39,6 +50,38 @@ export class TileMap {
                     type: 'empty',
                     passable: true
                 };
+            }
+        }
+
+        // Build a simple static map layout
+        this.buildStaticLayout();
+    }
+
+    private buildStaticLayout(): void {
+        // Base grass
+        for (let y = 0; y < this.mapHeight; y++) {
+            for (let x = 0; x < this.mapWidth; x++) {
+                this.setTile(x, y, 'grass');
+            }
+        }
+
+        // Stone area (training ground)
+        const stoneX = Math.floor(this.mapWidth * 0.25);
+        const stoneY = Math.floor(this.mapHeight * 0.25);
+        for (let y = stoneY; y < stoneY + 8; y++) {
+            for (let x = stoneX; x < stoneX + 12; x++) {
+                this.setTile(x, y, 'stone');
+            }
+        }
+
+        // Water river (vertical strip)
+        const riverX = Math.floor(this.mapWidth * 0.65);
+        for (let y = 0; y < this.mapHeight; y++) {
+            for (let w = 0; w < 3; w++) {
+                const rx = riverX + w;
+                if (rx >= 0 && rx < this.mapWidth) {
+                    this.setTile(rx, y, 'water');
+                }
             }
         }
     }
@@ -321,6 +364,121 @@ export class TileMap {
         }
         
         console.log('Random details added');
+    }
+
+    public async loadFromTiled(mapJsonUrl: string): Promise<void> {
+        try {
+            const response = await fetch(mapJsonUrl);
+            const data = await response.json();
+
+            const tilewidth = data.tilewidth || this.tileSize;
+            const tileheight = data.tileheight || this.tileSize;
+            const width = data.width;
+            const height = data.height;
+
+            if (tilewidth !== this.tileSize || tileheight !== this.tileSize) {
+                console.warn(`Tiled map tile size ${tilewidth}x${tileheight} differs from engine tile size ${this.tileSize}. Rendering may be offset.`);
+            }
+
+            // Reset internal grid to map dimensions
+            this.mapWidth = width;
+            this.mapHeight = height;
+            this.container.removeChildren();
+            this.initializeTiles();
+
+            // Build tileset atlas mapping from gid to PIXI.Texture
+            const gidToTexture: Map<number, PIXI.Texture> = new Map();
+            const tilesets = data.tilesets || [];
+            tilesets.forEach((ts: any) => {
+                const imagePath = ts.image; // runtime path under assets/
+                const imgTexture = this.assetLoader.createTexture(imagePath) || PIXI.Texture.from(imagePath);
+                const cols = ts.columns || Math.floor((ts.imagewidth - (ts.margin || 0) + (ts.spacing || 0)) / (ts.tilewidth + (ts.spacing || 0)));
+                const rows = ts.tilecount ? Math.ceil(ts.tilecount / cols) : Math.floor((ts.imageheight - (ts.margin || 0) + (ts.spacing || 0)) / (ts.tileheight + (ts.spacing || 0)));
+                const margin = ts.margin || 0;
+                const spacing = ts.spacing || 0;
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        const gid = ts.firstgid + row * cols + col;
+                        const x = margin + col * (ts.tilewidth + spacing);
+                        const y = margin + row * (ts.tileheight + spacing);
+                        if (x + ts.tilewidth > (ts.imagewidth || Infinity) || y + ts.tileheight > (ts.imageheight || Infinity)) {
+                            continue;
+                        }
+                        const sub = new PIXI.Texture({
+                            source: imgTexture.source,
+                            frame: new PIXI.Rectangle(x, y, ts.tilewidth, ts.tileheight)
+                        });
+                        gidToTexture.set(gid, sub);
+                    }
+                }
+            });
+
+            // Render tile layers in order
+            (data.layers || []).filter((l: any) => l.type === 'tilelayer').forEach((layer: any) => {
+                const gids: number[] = layer.data;
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const idx = y * width + x;
+                        const gid = gids[idx] || 0;
+                        if (gid === 0) continue;
+                        const tex = gidToTexture.get(gid);
+                        if (tex) {
+                            const sprite = new PIXI.Sprite(tex);
+                            sprite.x = x * this.tileSize;
+                            sprite.y = y * this.tileSize;
+                            sprite.width = this.tileSize;
+                            sprite.height = this.tileSize;
+                            this.container.addChild(sprite);
+                            // Record tile data
+                            if (this.tiles[y] && this.tiles[y][x]) {
+                                this.tiles[y][x].sprite = sprite;
+                                this.tiles[y][x].type = 'grass'; // default type; precise semantics can be added later
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Collisions: objectgroup named 'Collisions'
+            const collisionLayer = (data.layers || []).find((l: any) => l.type === 'objectgroup' && /collisions?/i.test(l.name));
+            if (collisionLayer && collisionLayer.objects) {
+                collisionLayer.objects.forEach((obj: any) => {
+                    const minTileX = Math.floor(obj.x / this.tileSize);
+                    const minTileY = Math.floor(obj.y / this.tileSize);
+                    const maxTileX = Math.floor((obj.x + (obj.width || 0) - 1) / this.tileSize);
+                    const maxTileY = Math.floor((obj.y + (obj.height || 0) - 1) / this.tileSize);
+                    for (let ty = minTileY; ty <= maxTileY; ty++) {
+                        for (let tx = minTileX; tx <= maxTileX; tx++) {
+                            if (this.tiles[ty] && this.tiles[ty][tx]) {
+                                this.tiles[ty][tx].passable = false;
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Generic objects (NPCs, items, triggers)
+            this.objects = [];
+            (data.layers || []).filter((l: any) => l.type === 'objectgroup' && !/collisions?/i.test(l.name)).forEach((layer: any) => {
+                (layer.objects || []).forEach((o: any) => {
+                    this.objects.push({
+                        name: o.name || '',
+                        type: o.type || (layer.name || ''),
+                        x: o.x || 0,
+                        y: o.y || 0,
+                        width: o.width || 0,
+                        height: o.height || 0,
+                        props: o.props || o.properties || {}
+                    });
+                });
+            });
+        } catch (e) {
+            console.error('Failed to load Tiled map:', e);
+        }
+    }
+
+    public getObjects(): MapObject[] {
+        return this.objects.slice();
     }
 
     public getContainer(): PIXI.Container {

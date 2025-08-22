@@ -233,4 +233,43 @@ export abstract class BaseScene {
     protected easeIn(t: number): number {
         return t * t * t;
     }
+
+    protected createDialog(text: string): { container: PIXI.Container; setText: (t: string)=>void; close: ()=>void } {
+        const app = this.game.getApp();
+        const container = new PIXI.Container();
+        container.label = 'Dialog';
+        container.zIndex = 2000;
+
+        const padding = 16;
+        const width = Math.min(app.screen.width - padding * 2, 600);
+        const height = 120;
+        const x = (app.screen.width - width) / 2;
+        const y = app.screen.height - height - padding;
+
+        const bg = new PIXI.Graphics();
+        bg.roundRect(0, 0, width, height, 10);
+        bg.fill(0x000000, 0.7);
+        bg.stroke({ color: 0xffffff, width: 2, alpha: 0.8 });
+        bg.x = x;
+        bg.y = y;
+
+        const txt = this.createText(text, {
+            fontSize: 16,
+            fill: 0xffffff,
+            wordWrap: true,
+            wordWrapWidth: width - padding * 2
+        });
+        txt.x = x + padding;
+        txt.y = y + padding;
+
+        container.addChild(bg);
+        container.addChild(txt);
+        this.container.addChild(container);
+
+        return {
+            container,
+            setText: (t: string) => { (txt as any).text = t; },
+            close: () => { container.destroy({ children: true }); }
+        };
+    }
 }

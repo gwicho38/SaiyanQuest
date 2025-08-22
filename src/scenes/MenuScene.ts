@@ -290,11 +290,95 @@ export class MenuScene extends BaseScene {
     private openSettings(): void {
         console.log('Opening settings...');
         // TODO: Implement settings scene
+        const dlg = this.createDialog('Settings not implemented yet.');
+        setTimeout(() => dlg.close(), 1500);
     }
 
     private showCredits(): void {
         console.log('Showing credits...');
-        // TODO: Implement credits scene
+        const dlg = this.createDialog('Created by SaiyanQuest Team');
+        setTimeout(() => dlg.close(), 1500);
+    }
+
+    // Simple Save/Load panel helpers
+    private openSaveLoadPanel(mode: 'save' | 'load'): void {
+        const app = this.game.getApp();
+        const container = new PIXI.Container();
+        container.zIndex = 3000;
+
+        const width = Math.min(500, app.screen.width - 40);
+        const height = 260;
+        const x = (app.screen.width - width) / 2;
+        const y = (app.screen.height - height) / 2;
+
+        const bg = new PIXI.Graphics();
+        bg.roundRect(0, 0, width, height, 10);
+        bg.fill(0x000000, 0.8);
+        bg.stroke({ color: 0xffffff, width: 2, alpha: 0.8 });
+        bg.x = x;
+        bg.y = y;
+
+        const title = this.createText(mode === 'save' ? 'Save Game' : 'Load Game', {
+            fontSize: 24,
+            fill: 0xffd700,
+            stroke: { color: 0x000000, width: 2 }
+        });
+        title.x = x + 16;
+        title.y = y + 10;
+
+        // List 3 slots
+        const saveManager = this.game.getSaveManager();
+        const slots = [0,1,2].map(i => {
+            const slotY = y + 60 + i * 60;
+            const slotBg = new PIXI.Graphics();
+            slotBg.roundRect(x + 10, slotY, width - 20, 50, 6);
+            slotBg.fill(0x1e1e1e, 0.9);
+            return slotBg;
+        });
+
+        const texts: PIXI.Text[] = [];
+        [0,1,2].forEach(i => {
+            const sd = saveManager.getCurrentSave();
+            const label = sd ? `Slot ${i+1}: Level ${sd.metadata.level} - ${new Date(sd.metadata.saveDate).toLocaleString()}` : `Slot ${i+1}: Empty`;
+            const t = this.createText(label, { fontSize: 16, fill: 0xffffff });
+            t.x = x + 24;
+            t.y = y + 75 + i * 60;
+            texts.push(t);
+        });
+
+        // Click handlers
+        const onClick = (slotIdx: number) => {
+            if (mode === 'save') {
+                const current = saveManager.getCurrentSave() || saveManager.createNewSave();
+                saveManager.saveGame(current);
+                this.createDialog(`Saved to slot ${slotIdx+1}`).close();
+            } else {
+                const loaded = saveManager.loadSaveData();
+                if (loaded) {
+                    this.createDialog(`Loaded slot ${slotIdx+1}`).close();
+                } else {
+                    this.createDialog('No save found.').close();
+                }
+            }
+            this.container.removeChild(container);
+            container.destroy({ children: true });
+        };
+
+        // Interactive overlays
+        const overlays: PIXI.Graphics[] = [];
+        [0,1,2].forEach(i => {
+            const oy = y + 60 + i * 60;
+            const g = new PIXI.Graphics();
+            g.roundRect(x + 10, oy, width - 20, 50, 6);
+            g.fill(0xffffff, 0.001);
+            g.eventMode = 'static';
+            g.cursor = 'pointer';
+            g.on('pointertap', () => onClick(i));
+            overlays.push(g);
+        });
+
+        container.addChild(bg, title, ...slots, ...texts, ...overlays);
+        this.container.addChild(container);
     }
 
     private exitGame(): void {

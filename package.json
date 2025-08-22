@@ -1,7 +1,7 @@
 {
   "name": "dragon-ball-z-saiyan-quest",
   "productName": "Dragon Ball Z: Saiyan Quest HD-2D",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Dragon Ball Z: Saiyan Quest - HD-2D RPG Game built with PixiJS + TypeScript + Electron",
   "main": "main.js",
   "scripts": {
@@ -20,7 +20,8 @@
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.ts",
-    "clean": "rimraf dist build"
+    "clean": "rimraf dist build",
+    "map:convert": "node scripts/convert_tmx_to_json.js resources/Tuxemon/mods/tuxemon/maps/flower_city.tmx assets/maps/overworld.json"
   },
   "keywords": [
     "pixijs",
@@ -61,7 +62,8 @@
     "wait-on": "^8.0.4",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1"
+    "webpack-dev-server": "^4.15.1",
+    "xml2js": "^0.6.2"
   },
   "engines": {
     "node": ">=18.0.0",

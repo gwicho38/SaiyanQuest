@@ -37,7 +37,7 @@ class GameBootstrap {
             this.updateLoadingText('Loading game assets...');
             
             // Initialize asset loader
-            const assetLoader = new AssetLoader();
+            const assetLoader = AssetLoader.getInstance();
             
             // Load assets with progress tracking
             await assetLoader.loadAssets((progress: number) => {

@@ -6,6 +6,7 @@ import { AudioManager } from './AudioManager';
 import { SaveManager } from './SaveManager';
 import { SceneManager } from './SceneManager';
 import { AssetLoader } from './AssetLoader';
+import { QuestManager } from './QuestManager';
 
 export interface GameSettings {
     width: number;
@@ -24,6 +25,7 @@ export class Game {
     private saveManager!: SaveManager;
     private isInitialized = false;
     private gameSettings: GameSettings;
+    private questManager!: QuestManager;
 
     constructor() {
         this.gameSettings = {
@@ -56,6 +58,9 @@ export class Game {
             // Setup AssetLoader with game instance
             const assetLoader = AssetLoader.getInstance();
             assetLoader.setGameInstance(this);
+
+            // Quest manager
+            this.questManager = new QuestManager(this.saveManager);
 
             // Setup canvas and DOM
             this.setupCanvas();
@@ -128,17 +133,14 @@ export class Game {
         const scaleY = containerHeight / this.gameSettings.height;
         const scale = Math.min(scaleX, scaleY);
         
-        // Apply scale
-        const newWidth = this.gameSettings.width * scale;
-        const newHeight = this.gameSettings.height * scale;
+        // Keep renderer at logical size; scale canvas via CSS only
+        const newCssWidth = this.gameSettings.width * scale;
+        const newCssHeight = this.gameSettings.height * scale;
         
-        this.app.renderer.resize(newWidth, newHeight);
-        
-        // Center the canvas
         const canvas = this.app.canvas;
         if (canvas) {
-            canvas.style.width = `${newWidth}px`;
-            canvas.style.height = `${newHeight}px`;
+            canvas.style.width = `${newCssWidth}px`;
+            canvas.style.height = `${newCssHeight}px`;
         }
     }
 
@@ -206,6 +208,10 @@ export class Game {
 
     public getSaveManager(): SaveManager {
         return this.saveManager;
+    }
+
+    public getQuestManager(): QuestManager {
+        return this.questManager;
     }
 
     public getSceneManager(): SceneManager {

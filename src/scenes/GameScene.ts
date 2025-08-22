@@ -23,6 +23,8 @@ export class GameScene extends BaseScene {
     private readonly WORLD_HEIGHT = 1200;
     private readonly TILE_SIZE = 32;
 
+    private activeDialog?: { container: PIXI.Container; setText: (t: string)=>void; close: ()=>void };
+
     constructor(game: Game) {
         super(game);
     }
@@ -31,7 +33,7 @@ export class GameScene extends BaseScene {
         console.log('Creating Dragon Ball Z game scene...');
         
         this.setupContainers();
-        this.createWorld();
+        await this.createWorld();
         this.createPlayer();
         this.setupCamera();
         this.createUI();
@@ -66,7 +68,7 @@ export class GameScene extends BaseScene {
         this.container.sortableChildren = true;
     }
 
-    private createWorld(): void {
+    private async createWorld(): Promise<void> {
         // Initialize HD-2D renderer
         this.hd2dRenderer = new HD2DRenderer(this.game.getApp());
         
@@ -78,8 +80,13 @@ export class GameScene extends BaseScene {
         
         this.tileMap = new TileMap(tilesWidth, tilesHeight, this.TILE_SIZE);
         
-        // Generate the world
-        this.generateDBZWorld();
+        // Load from Tiled JSON if available, else fall back to generator
+        try {
+            await this.tileMap.loadFromTiled('assets/maps/overworld.json');
+        } catch (e) {
+            console.warn('Falling back to generated world due to Tiled load error');
+            this.generateDBZWorld();
+        }
         
         // Add world elements to containers
         this.worldContainer.addChild(this.tileMap.getContainer());
@@ -181,8 +188,9 @@ export class GameScene extends BaseScene {
 
     private setupCamera(): void {
         // Initialize camera to follow player
-        this.camera.x = this.player.getX() - this.game.getApp().screen.width / 2;
-        this.camera.y = this.player.getY() - this.game.getApp().screen.height / 2;
+        const screen = this.game.getApp().renderer.screen;
+        this.camera.x = this.player.getX() - screen.width / 2;
+        this.camera.y = this.player.getY() - screen.height / 2;
         this.camera.targetX = this.camera.x;
         this.camera.targetY = this.camera.y;
         
@@ -196,9 +204,9 @@ export class GameScene extends BaseScene {
         this.camera.y += (this.camera.targetY - this.camera.y) * lerp;
         
         // Clamp camera to world bounds
-        const app = this.game.getApp();
-        this.camera.x = Math.max(0, Math.min(this.WORLD_WIDTH - app.screen.width, this.camera.x));
-        this.camera.y = Math.max(0, Math.min(this.WORLD_HEIGHT - app.screen.height, this.camera.y));
+        const screen = this.game.getApp().renderer.screen;
+        this.camera.x = Math.max(0, Math.min(this.WORLD_WIDTH - screen.width, this.camera.x));
+        this.camera.y = Math.max(0, Math.min(this.WORLD_HEIGHT - screen.height, this.camera.y));
         
         // Apply camera transform to world containers
         this.worldContainer.x = -this.camera.x;
@@ -322,6 +330,12 @@ export class GameScene extends BaseScene {
         // Update player
         this.updatePlayer(deltaTime);
         
+        // Close dialog with cancel
+        if (this.activeDialog && this.game.getInputManager().isCancelPressed()) {
+            this.activeDialog.close();
+            this.activeDialog = undefined;
+        }
+        
         // Update camera
         this.updateCameraFollow();
         this.updateCameraPosition();
@@ -334,23 +348,78 @@ export class GameScene extends BaseScene {
     }
 
     private updatePlayer(deltaTime: number): void {
+        // Proposed next position based on current velocity (from input)
+        // We reconstruct intent each frame using input to perform collision-aware moves
+        const input = this.game.getInputManager();
+        const movement = input.getMovementVector();
+        const isRunning = input.isRunning();
+        
+        // Compute intended delta in world units
+        const speed = (isRunning ? 300 : 180) / 60;
+        let dx = movement.x * speed;
+        let dy = movement.y * speed;
+        
+        let nextX = this.player.getX();
+        let nextY = this.player.getY();
+        
+        // Collision helper for a point against tile passability
+        const isBlockedAt = (wx: number, wy: number): boolean => {
+            return this.tileMap.isCollisionAt(wx, wy);
+        };
+        
+        // Player collision radius (roughly half sprite)
+        const radius = 12;
+        
+        // Attempt horizontal move first
+        if (dx !== 0) {
+            const tryX = nextX + dx;
+            // Check two sample points at player's left/right edges
+            const sx = tryX + Math.sign(dx) * radius;
+            const top = nextY - radius * 0.6;
+            const bottom = nextY + radius * 0.6;
+            if (!isBlockedAt(sx, top) && !isBlockedAt(sx, bottom)) {
+                nextX = tryX;
+            } else {
+                dx = 0;
+            }
+        }
+        
+        // Then vertical move
+        if (dy !== 0) {
+            const tryY = nextY + dy;
+            const sy = tryY + Math.sign(dy) * radius;
+            const left = nextX - radius * 0.6;
+            const right = nextX + radius * 0.6;
+            if (!isBlockedAt(left, sy) && !isBlockedAt(right, sy)) {
+                nextY = tryY;
+            } else {
+                dy = 0;
+            }
+        }
+        
+        // Clamp to world bounds
+        nextX = Math.max(radius, Math.min(this.WORLD_WIDTH - radius, nextX));
+        nextY = Math.max(radius, Math.min(this.WORLD_HEIGHT - radius, nextY));
+        
+        // Apply position
+        this.player.setPosition(nextX, nextY);
+        
+        // Update player animation state
+        if (movement.x !== 0 || movement.y !== 0) {
+            this.player.move(movement.x, movement.y, isRunning);
+        } else {
+            this.player.stop();
+        }
+        
+        // Update sprite transform/animations
         this.player.update(deltaTime);
-        
-        // Check tile collisions
-        const playerTileX = Math.floor(this.player.getX() / this.TILE_SIZE);
-        const playerTileY = Math.floor(this.player.getY() / this.TILE_SIZE);
-        
-        // Simple collision detection with world bounds
-        const newX = Math.max(16, Math.min(this.WORLD_WIDTH - 16, this.player.getX()));
-        const newY = Math.max(16, Math.min(this.WORLD_HEIGHT - 16, this.player.getY()));
-        
-        this.player.setPosition(newX, newY);
     }
 
     private updateCameraFollow(): void {
         // Update camera target to follow player
-        this.camera.targetX = this.player.getX() - this.game.getApp().screen.width / 2;
-        this.camera.targetY = this.player.getY() - this.game.getApp().screen.height / 2;
+        const screen = this.game.getApp().renderer.screen;
+        this.camera.targetX = this.player.getX() - screen.width / 2;
+        this.camera.targetY = this.player.getY() - screen.height / 2;
     }
 
     private handleInput(): void {
@@ -364,6 +433,11 @@ export class GameScene extends BaseScene {
             this.player.move(movement.x, movement.y, isRunning);
         } else {
             this.player.stop();
+        }
+        
+        // Interact with nearby objects
+        if (input.isConfirmPressed()) {
+            this.tryInteract();
         }
         
         // Combat
@@ -394,6 +468,83 @@ export class GameScene extends BaseScene {
         // Menu
         if (input.isMenuPressed()) {
             this.pauseGame();
+        }
+    }
+
+    private async loadMapWithTransition(mapPath: string, tileX?: number, tileY?: number): Promise<void> {
+        // Fade out
+        await this.fadeOut(this.container, 300);
+        
+        // Remove old map container
+        if (this.tileMap) {
+            const tileContainer = this.tileMap.getContainer();
+            const parent = tileContainer.parent;
+            if (parent) {
+                parent.removeChild(tileContainer);
+            }
+        }
+        
+        // Recreate tilemap and load
+        const tilesWidth = Math.floor(this.WORLD_WIDTH / this.TILE_SIZE);
+        const tilesHeight = Math.floor(this.WORLD_HEIGHT / this.TILE_SIZE);
+        this.tileMap = new TileMap(tilesWidth, tilesHeight, this.TILE_SIZE);
+        await this.tileMap.loadFromTiled(mapPath);
+        this.worldContainer.addChild(this.tileMap.getContainer());
+        
+        // Reposition player if provided
+        if (typeof tileX === 'number' && typeof tileY === 'number') {
+            const px = tileX * this.TILE_SIZE + this.TILE_SIZE / 2;
+            const py = tileY * this.TILE_SIZE + this.TILE_SIZE / 2;
+            this.player.setPosition(px, py);
+        }
+        
+        // Reset camera immediately
+        this.camera.x = this.player.getX() - this.game.getApp().renderer.screen.width / 2;
+        this.camera.y = this.player.getY() - this.game.getApp().renderer.screen.height / 2;
+        this.camera.targetX = this.camera.x;
+        this.camera.targetY = this.camera.y;
+        this.updateCameraPosition();
+        
+        // Fade in
+        await this.fadeIn(this.container, 300);
+    }
+
+    private tryInteract(): void {
+        if (this.activeDialog) {
+            // Close dialog on confirm
+            this.activeDialog.close();
+            this.activeDialog = undefined;
+            return;
+        }
+        const objects = this.tileMap.getObjects();
+        const px = this.player.getX();
+        const py = this.player.getY();
+        const radius = 24;
+        const found = objects.find(o => {
+            const cx = o.x + o.width / 2;
+            const cy = o.y + o.height / 2;
+            const dx = cx - px;
+            const dy = cy - py;
+            return Math.sqrt(dx * dx + dy * dy) <= radius;
+        });
+        if (found) {
+            const props = (found as any).props || {};
+            // Teleport/transition: props.teleport or props.transition: "path,tx,ty"
+            const trans = props.teleport || props.transition;
+            if (typeof trans === 'string') {
+                const parts = trans.split(',').map((s: string) => s.trim());
+                const path = parts[0];
+                const tx = parts[1] ? parseInt(parts[1], 10) : undefined;
+                const ty = parts[2] ? parseInt(parts[2], 10) : undefined;
+                if (path) {
+                    const runtimePath = path.startsWith('assets/') ? path : `assets/maps/${path}`;
+                    this.loadMapWithTransition(runtimePath, tx, ty);
+                    return;
+                }
+            }
+            const text = props.text || props.dialog || (found as any).text || (found as any).dialog || `You inspect ${found.name || found.type}.`;
+            // TODO: if dialogId present, look up from dialog DB
+            this.activeDialog = this.createDialog(text);
         }
     }
 

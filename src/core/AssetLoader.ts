@@ -53,7 +53,9 @@ export class AssetLoader {
                 for (const asset of assets) {
                     try {
                         await PIXI.Assets.load(asset.url);
-                        this.loadedAssets.set(asset.name, PIXI.Assets.get(asset.url));
+                        // Ensure we store a Texture instance
+                        const texture = PIXI.Texture.from(asset.url);
+                        this.loadedAssets.set(asset.name, texture);
                     } catch (error) {
                         console.warn(`Failed to load asset ${asset.name}, using fallback`);
                         // Fallback will already be loaded from preloadMissingAssets
@@ -65,15 +67,19 @@ export class AssetLoader {
                 try {
                     const loadedAssets = await PIXI.Assets.load(Object.values(assetsToLoad));
                     Object.entries(assetsToLoad).forEach(([name, url]) => {
-                        const loadedAsset = loadedAssets[url as string];
-                        if (loadedAsset) {
-                            this.loadedAssets.set(name, loadedAsset);
+                        // Ensure we store a Texture instance
+                        const texture = PIXI.Texture.from(url as string);
+                        if (texture) {
+                            this.loadedAssets.set(name, texture);
                         }
                     });
                 } catch (error) {
                     console.warn('Some assets failed to load, using fallbacks');
                 }
             }
+
+            // After loading, if town tilesheet exists, register default sub-tiles
+            this.registerTilesFromTownTiles();
 
             console.log(`Asset loading completed with fallbacks`);
             
@@ -86,7 +92,24 @@ export class AssetLoader {
 
     private getAssetDefinitions(): AssetDefinition[] {
         return [
-            // Character sprites
+            // Character sprites (generic hero, plus legacy DBZ options)
+            {
+                name: 'hero_spritesheet',
+                url: 'assets/sprites/characters/male_walkcycle.png',
+                type: 'spritesheet'
+            },
+            {
+                name: 'hero_texture',
+                url: 'assets/sprites/characters/male_walkcycle.png',
+                type: 'texture'
+            },
+            {
+                name: 'hero_female_spritesheet',
+                url: 'assets/sprites/characters/female_walkcycle.png',
+                type: 'spritesheet'
+            },
+
+            // Legacy DBZ sheets (kept as optional fallbacks)
             {
                 name: 'goku_spritesheet',
                 url: 'assets/sprites/characters/goku_sheet.png',
@@ -103,7 +126,31 @@ export class AssetLoader {
                 type: 'spritesheet'
             },
 
-            // Fallback sprites
+            // Primary tilesheet (resources)
+            {
+                name: 'town_tiles',
+                url: 'assets/resources/town_tiles.png',
+                type: 'spritesheet'
+            },
+
+            // Tiles (LPC fallback)
+            {
+                name: 'grass_tile',
+                url: 'assets/sprites/tiles/grass.png',
+                type: 'texture'
+            },
+            {
+                name: 'stone_tile',
+                url: 'assets/sprites/tiles/rock.png',
+                type: 'texture'
+            },
+            {
+                name: 'water_tile',
+                url: 'assets/sprites/tiles/water.png',
+                type: 'texture'
+            },
+
+            // Fallback/simple sprites (exist on disk)
             {
                 name: 'player_sprite',
                 url: 'assets/player.png',
@@ -113,58 +160,7 @@ export class AssetLoader {
                 name: 'enemy_sprite',
                 url: 'assets/enemy.png',
                 type: 'texture'
-            },
-
-            // Effects
-            {
-                name: 'ki_blast',
-                url: 'assets/sprites/effects/ki_blast.png',
-                type: 'texture'
-            },
-            {
-                name: 'kamehameha_effect',
-                url: 'assets/sprites/effects/kamehameha.png',
-                type: 'texture'
-            },
-            {
-                name: 'power_spark',
-                url: 'assets/sprites/effects/power_spark.png',
-                type: 'texture'
-            },
-            {
-                name: 'ssj_aura',
-                url: 'assets/sprites/effects/ssj_aura.png',
-                type: 'texture'
-            },
-
-            // Tiles and backgrounds
-            {
-                name: 'grass_tile',
-                url: 'assets/sprites/tiles/grass.png',
-                type: 'texture'
-            },
-            {
-                name: 'stone_tile',
-                url: 'assets/sprites/tiles/stone.png',
-                type: 'texture'
-            },
-            {
-                name: 'water_tile',
-                url: 'assets/sprites/tiles/water.png',
-                type: 'texture'
-            },
-
-            // Audio assets (if needed)
-            // {
-            //     name: 'bgm_overworld',
-            //     url: 'assets/audio/bgm_overworld.mp3',
-            //     type: 'audio'
-            // },
-            // {
-            //     name: 'sfx_punch',
-            //     url: 'assets/audio/sfx_punch.wav',
-            //     type: 'audio'
-            // },
+            }
         ];
     }
 
@@ -250,12 +246,16 @@ export class AssetLoader {
     }
 
     public preloadMissingAssets(): void {
-        // Create missing asset textures as colored rectangles
+        // Create missing asset textures as colored rectangles (limited to known names)
         const missingAssets = [
-            'ki_blast', 'kamehameha_effect', 'power_spark', 'ssj_aura',
-            'grass_tile', 'stone_tile', 'water_tile', 'player_sprite',
-            'goku_spritesheet', 'ssj_goku_spritesheet', 'piccolo_spritesheet',
-            'enemy_sprite'
+            'hero_spritesheet',
+            'hero_texture',
+            'hero_female_spritesheet',
+            'player_sprite',
+            'enemy_sprite',
+            'goku_spritesheet',
+            'ssj_goku_spritesheet',
+            'piccolo_spritesheet'
         ];
 
         const missingCount = missingAssets.filter(name => !this.hasAsset(name)).length;
@@ -277,59 +277,29 @@ export class AssetLoader {
                     
                     // Set colors based on asset type
                     switch (assetName) {
-                        case 'ki_blast': 
-                            color = '#00ffff';
-                            ctx.fillStyle = color;
-                            ctx.beginPath();
-                            ctx.arc(16, 16, 12, 0, 2 * Math.PI);
-                            ctx.fill();
+                        case 'hero_spritesheet':
+                        case 'hero_texture':
+                            ctx.fillStyle = '#c68642'; // Skin tone
+                            ctx.fillRect(12, 8, 8, 8); // Head
+                            ctx.fillStyle = '#3b3b3b'; // Hair
+                            ctx.fillRect(10, 6, 12, 4);
+                            ctx.fillStyle = '#2b6cb0'; // Shirt
+                            ctx.fillRect(10, 16, 12, 10);
+                            ctx.fillStyle = '#2f855a'; // Pants
+                            ctx.fillRect(10, 26, 12, 6);
                             break;
-                        case 'kamehameha_effect': 
-                            color = '#0088ff';
-                            ctx.fillStyle = color;
-                            ctx.fillRect(0, 12, 32, 8);
+                        case 'hero_female_spritesheet':
+                            ctx.fillStyle = '#d2a679';
+                            ctx.fillRect(12, 8, 8, 8);
+                            ctx.fillStyle = '#5a2d0c'; // Hair
+                            ctx.fillRect(10, 6, 12, 4);
+                            ctx.fillStyle = '#e53e3e'; // Shirt
+                            ctx.fillRect(10, 16, 12, 10);
+                            ctx.fillStyle = '#4a5568'; // Pants
+                            ctx.fillRect(10, 26, 12, 6);
                             break;
-                        case 'power_spark': 
-                            color = '#ffff00';
-                            ctx.fillStyle = color;
-                            ctx.beginPath();
-                            ctx.arc(16, 16, 8, 0, 2 * Math.PI);
-                            ctx.fill();
-                            break;
-                        case 'ssj_aura': 
-                            color = '#ffd700';
-                            ctx.fillStyle = color;
-                            ctx.fillRect(4, 4, 24, 24);
-                            break;
-                        case 'grass_tile': 
-                            color = '#228b22';
-                            ctx.fillStyle = color;
-                            ctx.fillRect(0, 0, 32, 32);
-                            // Add grass texture
-                            ctx.fillStyle = '#32cd32';
-                            for (let i = 0; i < 8; i++) {
-                                ctx.fillRect(i * 4 + 1, i * 4 + 1, 2, 2);
-                            }
-                            break;
-                        case 'stone_tile': 
-                            color = '#808080';
-                            ctx.fillStyle = color;
-                            ctx.fillRect(0, 0, 32, 32);
-                            ctx.fillStyle = '#696969';
-                            ctx.fillRect(2, 2, 6, 6);
-                            ctx.fillRect(20, 15, 8, 8);
-                            break;
-                        case 'water_tile': 
-                            color = '#4169e1';
-                            ctx.fillStyle = color;
-                            ctx.fillRect(0, 0, 32, 32);
-                            ctx.fillStyle = '#87ceeb';
-                            ctx.fillRect(8, 8, 2, 2);
-                            ctx.fillRect(20, 20, 2, 2);
-                            break;
-                        case 'player_sprite':
                         case 'goku_spritesheet':
-                            // Create a simple Goku-like character
+                        case 'player_sprite':
                             ctx.fillStyle = '#fdbcb4'; // Skin tone
                             ctx.fillRect(12, 8, 8, 8); // Head
                             ctx.fillStyle = '#000000'; // Hair
@@ -340,26 +310,24 @@ export class AssetLoader {
                             ctx.fillRect(10, 26, 12, 6); // Legs
                             break;
                         case 'ssj_goku_spritesheet':
-                            // Create SSJ Goku
-                            ctx.fillStyle = '#fdbcb4'; // Skin tone
-                            ctx.fillRect(12, 8, 8, 8); // Head
+                            ctx.fillStyle = '#fdbcb4';
+                            ctx.fillRect(12, 8, 8, 8);
                             ctx.fillStyle = '#ffd700'; // Golden hair
-                            ctx.fillRect(10, 6, 12, 4); // Hair
-                            ctx.fillStyle = '#ff6600'; // Gi
-                            ctx.fillRect(10, 16, 12, 10); // Body
-                            ctx.fillStyle = '#0066ff'; // Belt/Pants
-                            ctx.fillRect(10, 26, 12, 6); // Legs
+                            ctx.fillRect(10, 6, 12, 4);
+                            ctx.fillStyle = '#ff6600';
+                            ctx.fillRect(10, 16, 12, 10);
+                            ctx.fillStyle = '#0066ff';
+                            ctx.fillRect(10, 26, 12, 6);
                             break;
                         case 'piccolo_spritesheet':
-                            // Create Piccolo
-                            ctx.fillStyle = '#90EE90'; // Green skin
-                            ctx.fillRect(12, 8, 8, 8); // Head
+                            ctx.fillStyle = '#90EE90';
+                            ctx.fillRect(12, 8, 8, 8);
                             ctx.fillStyle = '#000000'; // Turban
-                            ctx.fillRect(10, 6, 12, 4); // Turban
+                            ctx.fillRect(10, 6, 12, 4);
                             ctx.fillStyle = '#800080'; // Purple gi
-                            ctx.fillRect(10, 16, 12, 10); // Body
+                            ctx.fillRect(10, 16, 12, 10);
                             ctx.fillStyle = '#ffffff'; // White cape
-                            ctx.fillRect(8, 18, 16, 8); // Cape
+                            ctx.fillRect(8, 18, 16, 8);
                             break;
                         case 'enemy_sprite':
                             ctx.fillStyle = '#ff0000';
@@ -374,6 +342,36 @@ export class AssetLoader {
                 
                 const texture = PIXI.Texture.from(canvas);
                 this.loadedAssets.set(assetName, texture);
+            }
+        });
+    }
+
+    private registerTilesFromTownTiles(): void {
+        const baseTexture = this.getAsset<PIXI.Texture>('town_tiles');
+        if (!baseTexture) {
+            return;
+        }
+        const tileSize = 32;
+        const mappings: Record<string, { col: number; row: number }> = {
+            grass_tile: { col: 0, row: 0 },
+            stone_tile: { col: 1, row: 0 },
+            water_tile: { col: 2, row: 0 },
+        };
+
+        Object.entries(mappings).forEach(([name, pos]) => {
+            try {
+                const sub = new PIXI.Texture({
+                    source: baseTexture.source,
+                    frame: new PIXI.Rectangle(
+                        pos.col * tileSize,
+                        pos.row * tileSize,
+                        tileSize,
+                        tileSize
+                    )
+                });
+                this.loadedAssets.set(name, sub);
+            } catch (e) {
+                // Ignore if slicing fails; fallbacks remain
             }
         });
     }

@@ -55,6 +55,11 @@ module.exports = (env, argv) => {
               ignore: ['**/.*'],
             },
           },
+          {
+            from: 'resources',
+            to: 'assets/resources',
+            noErrorOnMissing: true
+          }
         ],
       }),
     ],

@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { AssetLoader } from '../core/AssetLoader';
 
-export type CharacterType = 'goku' | 'ssj_goku' | 'piccolo';
+export type CharacterType = 'hero' | 'hero_female' | 'goku' | 'ssj_goku' | 'piccolo';
 export type Direction = 'up' | 'down' | 'left' | 'right';
 
 export class Player {
@@ -11,7 +11,7 @@ export class Player {
     private direction: Direction = 'down';
     private isMoving = false;
     private isRunning = false;
-    private currentCharacter: CharacterType = 'goku';
+    private currentCharacter: CharacterType = 'hero';
     
     // Stats
     private level = 1;
@@ -36,29 +36,82 @@ export class Player {
         this.createSprite();
     }
     
+    private getCharacterTextureName(character: CharacterType): string {
+        switch (character) {
+            case 'hero': return 'hero_spritesheet';
+            case 'hero_female': return 'hero_female_spritesheet';
+            case 'goku': return 'goku_spritesheet';
+            case 'ssj_goku': return 'ssj_goku_spritesheet';
+            case 'piccolo': return 'piccolo_spritesheet';
+        }
+    }
+
+    private getCharacterFrameSize(character: CharacterType): { width: number; height: number } {
+        switch (character) {
+            case 'hero':
+            case 'hero_female':
+                return { width: 64, height: 64 };
+            case 'goku':
+            case 'ssj_goku':
+            case 'piccolo':
+                return { width: 32, height: 32 };
+        }
+    }
+    
+    private replaceSprite(newSprite: PIXI.Sprite): void {
+        // Preserve transform and replace within parent container if attached
+        newSprite.anchor.set(0.5);
+        newSprite.x = this.x;
+        newSprite.y = this.y;
+        newSprite.scale.copyFrom(this.sprite.scale);
+        newSprite.rotation = this.sprite.rotation;
+        newSprite.alpha = this.sprite.alpha;
+        const parent = this.sprite.parent;
+        if (parent) {
+            const index = parent.getChildIndex(this.sprite);
+            parent.removeChild(this.sprite);
+            parent.addChildAt(newSprite, index);
+        }
+        this.sprite.destroy();
+        this.sprite = newSprite;
+    }
+    
     private createSprite(): void {
         const assetLoader = AssetLoader.getInstance();
         
-        // Try to create sprite from asset loader
-        let sprite = assetLoader.createSprite('player_sprite');
-        
-        if (!sprite) {
-            // Create fallback sprite
-            console.warn('Player sprite not found, creating fallback');
+        // Try to create an animated sprite from the character's spritesheet
+        const textureName = this.getCharacterTextureName(this.currentCharacter);
+        const frame = this.getCharacterFrameSize(this.currentCharacter);
+        const animated = assetLoader.createAnimatedSprite(textureName, frame.width, frame.height);
+        if (animated) {
+            // Configure animation (start idle on frame 0)
+            animated.animationSpeed = this.animationSpeed;
+            animated.loop = true;
+            animated.gotoAndStop?.(0);
+            this.sprite = animated as unknown as PIXI.Sprite;
+        } else {
+            // Try to create sprite from asset loader fallback
+            let sprite = assetLoader.createSprite('hero_texture') || assetLoader.createSprite('player_sprite');
             
-            const canvas = document.createElement('canvas');
-            canvas.width = 32;
-            canvas.height = 32;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.fillStyle = '#ff6b00';
-                ctx.fillRect(8, 8, 16, 16);
+            if (!sprite) {
+                // Create fallback sprite
+                console.warn('Player sprite not found, creating fallback');
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 32;
+                canvas.height = 32;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.fillStyle = '#ff6b00';
+                    ctx.fillRect(8, 8, 16, 16);
+                }
+                const fallbackTexture = PIXI.Texture.from(canvas);
+                sprite = new PIXI.Sprite(fallbackTexture);
             }
-            const fallbackTexture = PIXI.Texture.from(canvas);
-            sprite = new PIXI.Sprite(fallbackTexture);
+            
+            this.sprite = sprite;
         }
         
-        this.sprite = sprite;
         this.sprite.anchor.set(0.5);
         this.sprite.x = this.x;
         this.sprite.y = this.y;
@@ -78,6 +131,20 @@ export class Player {
     }
     
     private updateAnimation(deltaTime: number): void {
+        // If animated sprite is available, control play/stop based on movement
+        if ((this.sprite as any) instanceof PIXI.AnimatedSprite) {
+            const anim = this.sprite as unknown as PIXI.AnimatedSprite;
+            anim.animationSpeed = this.animationSpeed * (this.isRunning ? 1.5 : 1);
+            if (this.isMoving) {
+                if (!anim.playing) anim.play();
+            } else {
+                if (anim.playing) anim.stop();
+                anim.gotoAndStop?.(0);
+            }
+            return;
+        }
+        
+        // Fallback simple scale animation for static sprites
         if (this.isMoving) {
             this.animationTimer += deltaTime;
             
@@ -85,12 +152,10 @@ export class Player {
                 this.currentFrame = (this.currentFrame + 1) % 4; // 4 frame walk cycle
                 this.animationTimer = 0;
                 
-                // Simple animation by scaling slightly
                 const scale = 1.0 + Math.sin(this.currentFrame * Math.PI * 0.5) * 0.1;
                 this.sprite.scale.set(scale);
             }
         } else {
-            // Idle animation
             this.currentFrame = 0;
             this.sprite.scale.set(1.0);
         }
@@ -177,23 +242,7 @@ export class Player {
         }
     }
     
-    public transformNext(): void {
-        const characters: CharacterType[] = ['goku', 'ssj_goku', 'piccolo'];
-        const currentIndex = characters.indexOf(this.currentCharacter);
-        const nextIndex = (currentIndex + 1) % characters.length;
-        
-        this.transform(characters[nextIndex]);
-    }
-    
-    public transformPrevious(): void {
-        const characters: CharacterType[] = ['goku', 'ssj_goku', 'piccolo'];
-        const currentIndex = characters.indexOf(this.currentCharacter);
-        const prevIndex = currentIndex === 0 ? characters.length - 1 : currentIndex - 1;
-        
-        this.transform(characters[prevIndex]);
-    }
-    
-    private transform(newCharacter: CharacterType): void {
+    public transform(newCharacter: CharacterType): void {
         if (this.currentKi >= 20 && newCharacter !== this.currentCharacter) {
             this.currentKi -= 20;
             const oldCharacter = this.currentCharacter;
@@ -224,12 +273,31 @@ export class Player {
         }
     }
     
+    public transformNext(): void {
+        const characters: CharacterType[] = ['hero', 'hero_female', 'goku', 'ssj_goku', 'piccolo'];
+        const currentIndex = characters.indexOf(this.currentCharacter);
+        const nextIndex = (currentIndex + 1) % characters.length;
+        this.transform(characters[nextIndex]);
+    }
+    
+    public transformPrevious(): void {
+        const characters: CharacterType[] = ['hero', 'hero_female', 'goku', 'ssj_goku', 'piccolo'];
+        const currentIndex = characters.indexOf(this.currentCharacter);
+        const prevIndex = currentIndex === 0 ? characters.length - 1 : currentIndex - 1;
+        this.transform(characters[prevIndex]);
+    }
+    
     private updateStatsForCharacter(): void {
         switch (this.currentCharacter) {
-            case 'goku':
+            case 'hero':
                 this.attackPower = 20;
                 this.speed = 180;
                 this.runSpeed = 300;
+                break;
+            case 'hero_female':
+                this.attackPower = 18;
+                this.speed = 190;
+                this.runSpeed = 310;
                 break;
             case 'ssj_goku':
                 this.attackPower = 35;
@@ -245,16 +313,34 @@ export class Player {
     }
     
     private updateSpriteForCharacter(): void {
-        // Update sprite color based on character
+        const assetLoader = AssetLoader.getInstance();
+        const textureName = this.getCharacterTextureName(this.currentCharacter);
+        const frame = this.getCharacterFrameSize(this.currentCharacter);
+        const newAnimated = assetLoader.createAnimatedSprite(textureName, frame.width, frame.height);
+        if (newAnimated) {
+            newAnimated.animationSpeed = this.animationSpeed;
+            newAnimated.loop = true;
+            newAnimated.gotoAndStop?.(0);
+            this.replaceSprite(newAnimated as unknown as PIXI.Sprite);
+            return;
+        }
+        
+        // Fallback: update tint to roughly reflect character if no sheet available
         switch (this.currentCharacter) {
+            case 'hero':
+                this.sprite.tint = 0xffffff;
+                break;
+            case 'hero_female':
+                this.sprite.tint = 0xffffff;
+                break;
             case 'goku':
-                this.sprite.tint = 0xff6b00; // Orange
+                this.sprite.tint = 0xff6b00;
                 break;
             case 'ssj_goku':
-                this.sprite.tint = 0xffd700; // Golden
+                this.sprite.tint = 0xffd700;
                 break;
             case 'piccolo':
-                this.sprite.tint = 0x90ee90; // Light green
+                this.sprite.tint = 0x90ee90;
                 break;
         }
     }
