@@ -23,6 +23,14 @@ export class GameScene extends BaseScene {
     private readonly WORLD_HEIGHT = 1200;
     private readonly TILE_SIZE = 32;
 
+    private getWorldWidth(): number {
+        return this.tileMap ? this.tileMap.getWorldDimensions().width : this.WORLD_WIDTH;
+    }
+
+    private getWorldHeight(): number {
+        return this.tileMap ? this.tileMap.getWorldDimensions().height : this.WORLD_HEIGHT;
+    }
+
     private activeDialog?: { container: PIXI.Container; setText: (t: string)=>void; close: ()=>void };
 
     constructor(game: Game) {
@@ -83,6 +91,12 @@ export class GameScene extends BaseScene {
         // Load from Tiled JSON if available, else fall back to generator
         try {
             await this.tileMap.loadFromTiled('assets/maps/overworld.json');
+            if (this.tileMap.getContainer().children.length === 0) {
+                console.warn('Tiled map loaded but empty, falling back to generated town');
+                this.generateDBZWorld();
+            } else {
+                console.log('Loaded Tiled town map successfully');
+            }
         } catch (e) {
             console.warn('Falling back to generated world due to Tiled load error');
             this.generateDBZWorld();
@@ -177,8 +191,8 @@ export class GameScene extends BaseScene {
 
     private createPlayer(): void {
         // Create player at the center of the world
-        const startX = this.WORLD_WIDTH / 2;
-        const startY = this.WORLD_HEIGHT / 2;
+        const startX = this.getWorldWidth() / 2;
+        const startY = this.getWorldHeight() / 2;
         
         this.player = new Player(startX, startY);
         this.gameContainer.addChild(this.player.getSprite());
@@ -205,8 +219,8 @@ export class GameScene extends BaseScene {
         
         // Clamp camera to world bounds
         const screen = this.game.getApp().renderer.screen;
-        this.camera.x = Math.max(0, Math.min(this.WORLD_WIDTH - screen.width, this.camera.x));
-        this.camera.y = Math.max(0, Math.min(this.WORLD_HEIGHT - screen.height, this.camera.y));
+        this.camera.x = Math.max(0, Math.min(this.getWorldWidth() - screen.width, this.camera.x));
+        this.camera.y = Math.max(0, Math.min(this.getWorldHeight() - screen.height, this.camera.y));
         
         // Apply camera transform to world containers
         this.worldContainer.x = -this.camera.x;
@@ -398,8 +412,8 @@ export class GameScene extends BaseScene {
         }
         
         // Clamp to world bounds
-        nextX = Math.max(radius, Math.min(this.WORLD_WIDTH - radius, nextX));
-        nextY = Math.max(radius, Math.min(this.WORLD_HEIGHT - radius, nextY));
+        nextX = Math.max(radius, Math.min(this.getWorldWidth() - radius, nextX));
+        nextY = Math.max(radius, Math.min(this.getWorldHeight() - radius, nextY));
         
         // Apply position
         this.player.setPosition(nextX, nextY);
