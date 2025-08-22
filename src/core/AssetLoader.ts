@@ -149,6 +149,16 @@ export class AssetLoader {
                 url: 'assets/sprites/tiles/water.png',
                 type: 'texture'
             },
+            {
+                name: 'dirt_tile',
+                url: 'assets/sprites/tiles/dirt.png',
+                type: 'texture'
+            },
+            {
+                name: 'watergrass_tile',
+                url: 'assets/sprites/tiles/watergrass.png',
+                type: 'texture'
+            },
 
             // Fallback/simple sprites (exist on disk)
             {

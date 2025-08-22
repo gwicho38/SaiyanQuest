@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { AssetLoader } from '../core/AssetLoader';
 
-export type TileType = 'grass' | 'stone' | 'water' | 'empty';
+export type TileType = 'grass' | 'stone' | 'water' | 'dirt' | 'watergrass' | 'empty';
 
 export interface TileData {
     type: TileType;
@@ -65,7 +65,10 @@ export class TileMap {
             }
         }
 
-        // Stone area (training ground)
+        // Dirt roads that wind through town
+        this.createPath();
+
+        // Stone plaza/training ground
         const stoneX = Math.floor(this.mapWidth * 0.25);
         const stoneY = Math.floor(this.mapHeight * 0.25);
         for (let y = stoneY; y < stoneY + 8; y++) {
@@ -74,7 +77,7 @@ export class TileMap {
             }
         }
 
-        // Water river (vertical strip)
+        // Water river (vertical strip) with grassy banks
         const riverX = Math.floor(this.mapWidth * 0.65);
         for (let y = 0; y < this.mapHeight; y++) {
             for (let w = 0; w < 3; w++) {
@@ -83,6 +86,11 @@ export class TileMap {
                     this.setTile(rx, y, 'water');
                 }
             }
+            // Banks
+            const leftBank = riverX - 1;
+            const rightBank = riverX + 3;
+            if (leftBank >= 0) this.setTile(leftBank, y, 'watergrass');
+            if (rightBank < this.mapWidth) this.setTile(rightBank, y, 'watergrass');
         }
     }
 
@@ -126,6 +134,8 @@ export class TileMap {
     private getTilePassable(type: TileType): boolean {
         switch (type) {
             case 'grass': return true;
+            case 'dirt': return true;
+            case 'watergrass': return true;
             case 'stone': return false;
             case 'water': return false;
             case 'empty': return true;
@@ -160,6 +170,12 @@ export class TileMap {
                 case 'water':
                     color = 0x4169E1; // Royal blue
                     break;
+                case 'dirt':
+                    color = 0x8B4513; // SaddleBrown
+                    break;
+                case 'watergrass':
+                    color = 0x2E8B57; // SeaGreen for bank
+                    break;
                 case 'empty':
                     color = 0x654321; // Brown dirt
                     break;
@@ -188,6 +204,16 @@ export class TileMap {
                 graphics.fill({ color: 0x87CEEB });
                 graphics.rect(20, 16, 2, 2);
                 graphics.fill({ color: 0x87CEEB });
+            } else if (type === 'dirt') {
+                // Dirt speckles
+                graphics.rect(6, 6, 2, 2);
+                graphics.fill({ color: 0x5C3317 });
+                graphics.rect(18, 14, 2, 2);
+                graphics.fill({ color: 0x5C3317 });
+            } else if (type === 'watergrass') {
+                // Blend hint
+                graphics.rect(0, 14, 32, 4);
+                graphics.fill({ color: 0x1E6B43 });
             }
             
             // Create texture from graphics using canvas approach
